@@ -2,14 +2,11 @@ use crate::common::tables::TWIDDLE_TABLE_4096_U16;
 
 /// Performs radix-2 DIF butterfly computation for Q15 fixed-point FFT.
 ///
-/// This implements the "Decimation in Frequency" radix-2 butterfly algorithm
-/// following the non-DSP version from CMSIS-DSP (arm_cfft_radix2_q15.c).
-///
 /// # Arguments
 /// - `data`: Mutable slice containing 2*fft_len i16 elements (interleaved complex)
 /// - `fft_len`: FFT size (must be power of 2)
-/// - `twiddle_coef_modifier`: Stride for twiddle factor lookup
-pub fn radix2_butterfly_i16(data: &mut [i16], fft_len: usize, mut twiddle_coef_modifier: u16) {
+/// - `twiddle_modifier`: Stride for twiddle factor lookup
+pub fn radix2_butterfly_i16(data: &mut [i16], fft_len: usize, mut twiddle_modifier: u16) {
     let twiddles = &TWIDDLE_TABLE_4096_U16;
 
     let mut n2 = fft_len >> 1;
@@ -21,7 +18,7 @@ pub fn radix2_butterfly_i16(data: &mut [i16], fft_len: usize, mut twiddle_coef_m
     for _j in 0..n2 {
         let cos_val = twiddles[ia * 2] as i16;
         let sin_val = twiddles[ia * 2 + 1] as i16;
-        ia += twiddle_coef_modifier as usize;
+        ia += twiddle_modifier as usize;
 
         let mut i = _j;
         while i < fft_len {
@@ -56,7 +53,7 @@ pub fn radix2_butterfly_i16(data: &mut [i16], fft_len: usize, mut twiddle_coef_m
         }
     }
 
-    twiddle_coef_modifier <<= 1;
+    twiddle_modifier <<= 1;
 
     // Middle stages
     let mut k = fft_len >> 1;
@@ -69,7 +66,7 @@ pub fn radix2_butterfly_i16(data: &mut [i16], fft_len: usize, mut twiddle_coef_m
         for _j in 0..n2 {
             let cos_val = twiddles[ia * 2] as i16;
             let sin_val = twiddles[ia * 2 + 1] as i16;
-            ia += twiddle_coef_modifier as usize;
+            ia += twiddle_modifier as usize;
 
             let mut i = _j;
             while i < fft_len {
@@ -102,7 +99,7 @@ pub fn radix2_butterfly_i16(data: &mut [i16], fft_len: usize, mut twiddle_coef_m
             }
         }
 
-        twiddle_coef_modifier <<= 1;
+        twiddle_modifier <<= 1;
         k >>= 1;
     }
 
@@ -134,11 +131,7 @@ pub fn radix2_butterfly_i16(data: &mut [i16], fft_len: usize, mut twiddle_coef_m
 }
 
 /// Performs radix-2 DIF inverse butterfly computation for Q15 fixed-point FFT.
-pub fn radix2_butterfly_inverse_i16(
-    data: &mut [i16],
-    fft_len: usize,
-    mut twiddle_coef_modifier: u16,
-) {
+pub fn radix2_butterfly_inverse_i16(data: &mut [i16], fft_len: usize, mut twiddle_modifier: u16) {
     let twiddles = &TWIDDLE_TABLE_4096_U16;
 
     let mut n2 = fft_len >> 1;
@@ -150,7 +143,7 @@ pub fn radix2_butterfly_inverse_i16(
     for _j in 0..n2 {
         let cos_val = twiddles[ia * 2] as i16;
         let sin_val = twiddles[ia * 2 + 1] as i16;
-        ia += twiddle_coef_modifier as usize;
+        ia += twiddle_modifier as usize;
 
         let mut i = _j;
         while i < fft_len {
@@ -184,7 +177,7 @@ pub fn radix2_butterfly_inverse_i16(
         }
     }
 
-    twiddle_coef_modifier <<= 1;
+    twiddle_modifier <<= 1;
 
     // Middle stages
     let mut k = fft_len >> 1;
@@ -196,7 +189,7 @@ pub fn radix2_butterfly_inverse_i16(
         for _j in 0..n2 {
             let cos_val = twiddles[ia * 2] as i16;
             let sin_val = twiddles[ia * 2 + 1] as i16;
-            ia += twiddle_coef_modifier as usize;
+            ia += twiddle_modifier as usize;
 
             let mut i = _j;
             while i < fft_len {
@@ -229,7 +222,7 @@ pub fn radix2_butterfly_inverse_i16(
             }
         }
 
-        twiddle_coef_modifier <<= 1;
+        twiddle_modifier <<= 1;
         k >>= 1;
     }
 
