@@ -7,6 +7,8 @@ fn main() {
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/FastMathFunctions/arm_divide_q31.c");
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/BasicMathFunctions/arm_abs_q15.c");
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/BasicMathFunctions/arm_abs_q31.c");
+    println!("cargo:rerun-if-changed=CMSIS-DSP/Source/BasicMathFunctions/arm_mult_q15.c");
+    println!("cargo:rerun-if-changed=CMSIS-DSP/Source/BasicMathFunctions/arm_mult_q31.c");
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/CommonTables/arm_common_tables.c");
     println!("cargo:rerun-if-changed=CMSIS-DSP/Include");
     println!("cargo:rerun-if-changed=CMSIS-DSP/PrivateInclude");
@@ -23,6 +25,8 @@ fn main() {
         .file("CMSIS-DSP/Source/FastMathFunctions/arm_divide_q31.c")
         .file("CMSIS-DSP/Source/BasicMathFunctions/arm_abs_q15.c")
         .file("CMSIS-DSP/Source/BasicMathFunctions/arm_abs_q31.c")
+        .file("CMSIS-DSP/Source/BasicMathFunctions/arm_mult_q15.c")
+        .file("CMSIS-DSP/Source/BasicMathFunctions/arm_mult_q31.c")
         .file("CMSIS-DSP/Source/CommonTables/arm_common_tables.c")
         .flag_if_supported("-Wno-unused-parameter")
         .compile("cmsis_dsp_ref");

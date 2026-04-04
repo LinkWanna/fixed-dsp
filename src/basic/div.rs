@@ -9,8 +9,6 @@ use crate::common::error::{Error, Result};
 pub fn div_i16(numerator: i16, denominator: i16) -> Result<(i16, i16)> {
     let mut shift = 0_i16;
 
-    let sign = (numerator < 0) ^ (denominator < 0);
-
     if denominator == 0 {
         return Err(Error::NanInf);
     }
@@ -26,7 +24,7 @@ pub fn div_i16(numerator: i16, denominator: i16) -> Result<(i16, i16)> {
         temp >>= shift_for_normalizing;
     }
 
-    if sign {
+    if (numerator < 0) ^ (denominator < 0) {
         temp = -temp;
     }
 
@@ -43,8 +41,6 @@ pub fn div_i16(numerator: i16, denominator: i16) -> Result<(i16, i16)> {
 pub fn div_i32(numerator: i32, denominator: i32) -> Result<(i32, i16)> {
     let mut shift = 0_i16;
 
-    let sign = (numerator < 0) ^ (denominator < 0);
-
     if denominator == 0 {
         return Err(Error::NanInf);
     }
@@ -60,7 +56,7 @@ pub fn div_i32(numerator: i32, denominator: i32) -> Result<(i32, i16)> {
         temp >>= shift_for_normalizing;
     }
 
-    if sign {
+    if (numerator < 0) ^ (denominator < 0) {
         temp = -temp;
     }
 

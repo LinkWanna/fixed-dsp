@@ -1,7 +1,7 @@
 use core::ffi::c_int;
 
+use fixed_dsp::basic::{div_i16, div_i32};
 use fixed_dsp::common::error::Error;
-use fixed_dsp::fast_math::{div_i16, div_i32};
 
 unsafe extern "C" {
     fn arm_divide_q15(
@@ -69,7 +69,11 @@ fn div_q15_difftest_against_cmsis() {
 
                     let sign = (n < 0) ^ (d < 0);
                     let q_sat = if sign { i16::MIN } else { i16::MAX };
-                    assert_eq!(q_ref, q_sat, "q15 saturated quotient mismatch for n={}, d={}", n, d);
+                    assert_eq!(
+                        q_ref, q_sat,
+                        "q15 saturated quotient mismatch for n={}, d={}",
+                        n, d
+                    );
                     assert_eq!(s_ref, 0, "q15 shift-on-error mismatch for n={}, d={}", n, d);
                 }
             }
@@ -79,8 +83,16 @@ fn div_q15_difftest_against_cmsis() {
 
 #[test]
 fn div_q31_difftest_against_cmsis() {
-    let numerators: Vec<i32> = sample_q31_inputs().into_iter().step_by(97).take(256).collect();
-    let mut denominators: Vec<i32> = sample_q31_inputs().into_iter().step_by(193).take(256).collect();
+    let numerators: Vec<i32> = sample_q31_inputs()
+        .into_iter()
+        .step_by(97)
+        .take(256)
+        .collect();
+    let mut denominators: Vec<i32> = sample_q31_inputs()
+        .into_iter()
+        .step_by(193)
+        .take(256)
+        .collect();
     denominators.extend([0, 1, -1, i32::MIN, i32::MAX, i32::MIN + 1, i32::MAX - 1]);
 
     for &n in &numerators {
@@ -111,7 +123,11 @@ fn div_q31_difftest_against_cmsis() {
 
                     let sign = (n < 0) ^ (d < 0);
                     let q_sat = if sign { i32::MIN } else { i32::MAX };
-                    assert_eq!(q_ref, q_sat, "q31 saturated quotient mismatch for n={}, d={}", n, d);
+                    assert_eq!(
+                        q_ref, q_sat,
+                        "q31 saturated quotient mismatch for n={}, d={}",
+                        n, d
+                    );
                     assert_eq!(s_ref, 0, "q31 shift-on-error mismatch for n={}, d={}", n, d);
                 }
             }

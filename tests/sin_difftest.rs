@@ -1,7 +1,7 @@
 mod difftest;
 
 use difftest::{assert_max_abs_diff, run_i16_difftest, run_i32_difftest};
-use fixed_dsp::fast_math::{sin_i16, sin_i32};
+use fixed_dsp::basic::{sin_i16, sin_i32};
 
 unsafe extern "C" {
     fn arm_sin_q15(x: i16) -> i16;
