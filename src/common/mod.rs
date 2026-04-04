@@ -1,2 +1,2 @@
-mod tables;
-pub use tables::*;
+pub mod error;
+pub mod tables;

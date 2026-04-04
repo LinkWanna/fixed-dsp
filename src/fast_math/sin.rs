@@ -1,4 +1,4 @@
-use crate::common::{SIN_TABLE_U16, SIN_TABLE_U32};
+use crate::common::tables::{SIN_TABLE_U16, SIN_TABLE_U32};
 
 const FAST_MATH_Q15_SHIFT: i32 = 16 - 10;
 const FAST_MATH_Q31_SHIFT: i32 = 32 - 10;
