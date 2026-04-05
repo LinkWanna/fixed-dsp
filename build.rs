@@ -13,6 +13,8 @@ fn main() {
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/BasicMathFunctions/arm_dot_prod_q31.c");
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/BasicMathFunctions/arm_shift_q15.c");
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/BasicMathFunctions/arm_shift_q31.c");
+    println!("cargo:rerun-if-changed=CMSIS-DSP/Source/BasicMathFunctions/arm_scale_q15.c");
+    println!("cargo:rerun-if-changed=CMSIS-DSP/Source/BasicMathFunctions/arm_scale_q31.c");
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/StatisticsFunctions/arm_absmax_q15.c");
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/StatisticsFunctions/arm_absmax_q31.c");
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/TransformFunctions/arm_bitreversal.c");
@@ -45,6 +47,8 @@ fn main() {
         .file("CMSIS-DSP/Source/BasicMathFunctions/arm_mult_q31.c")
         .file("CMSIS-DSP/Source/BasicMathFunctions/arm_shift_q15.c")
         .file("CMSIS-DSP/Source/BasicMathFunctions/arm_shift_q31.c")
+        .file("CMSIS-DSP/Source/BasicMathFunctions/arm_scale_q15.c")
+        .file("CMSIS-DSP/Source/BasicMathFunctions/arm_scale_q31.c")
         .file("CMSIS-DSP/Source/BasicMathFunctions/arm_dot_prod_q15.c")
         .file("CMSIS-DSP/Source/BasicMathFunctions/arm_dot_prod_q31.c")
         .file("CMSIS-DSP/Source/StatisticsFunctions/arm_absmax_q15.c")
