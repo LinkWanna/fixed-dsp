@@ -52,6 +52,7 @@ pub fn mat_mul_i32(a: Matrix<i32>, b: Matrix<i32>, output: Matrix<i32>) -> Resul
                     let b_val = *b.data.add(k * b.cols + col) as i64;
                     acc = acc.wrapping_add(a_val * b_val);
                 }
+
                 output
                     .data
                     .add(row * out_cols + col)
