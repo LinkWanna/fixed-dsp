@@ -3,6 +3,8 @@ fn main() {
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/FastMathFunctions/arm_sin_q31.c");
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/FastMathFunctions/arm_cos_q15.c");
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/FastMathFunctions/arm_cos_q31.c");
+    println!("cargo:rerun-if-changed=CMSIS-DSP/Source/FastMathFunctions/arm_vlog_q15.c");
+    println!("cargo:rerun-if-changed=CMSIS-DSP/Source/FastMathFunctions/arm_vlog_q31.c");
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/FastMathFunctions/arm_sqrt_q15.c");
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/FastMathFunctions/arm_sqrt_q31.c");
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/FastMathFunctions/arm_divide_q15.c");
@@ -43,6 +45,8 @@ fn main() {
         .file("CMSIS-DSP/Source/FastMathFunctions/arm_sin_q31.c")
         .file("CMSIS-DSP/Source/FastMathFunctions/arm_cos_q15.c")
         .file("CMSIS-DSP/Source/FastMathFunctions/arm_cos_q31.c")
+        .file("CMSIS-DSP/Source/FastMathFunctions/arm_vlog_q15.c")
+        .file("CMSIS-DSP/Source/FastMathFunctions/arm_vlog_q31.c")
         .file("CMSIS-DSP/Source/FastMathFunctions/arm_sqrt_q15.c")
         .file("CMSIS-DSP/Source/FastMathFunctions/arm_sqrt_q31.c")
         .file("CMSIS-DSP/Source/FastMathFunctions/arm_divide_q15.c")
