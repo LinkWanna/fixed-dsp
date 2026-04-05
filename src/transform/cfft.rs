@@ -1,4 +1,8 @@
 use crate::common::tables::{
+    BIT_REV_TABLE_16, BIT_REV_TABLE_32, BIT_REV_TABLE_64, BIT_REV_TABLE_128, BIT_REV_TABLE_256,
+    BIT_REV_TABLE_512, BIT_REV_TABLE_1024, BIT_REV_TABLE_2048, BIT_REV_TABLE_4096,
+};
+use crate::common::tables::{
     TWIDDLE_TABLE_16_U16, TWIDDLE_TABLE_16_U32, TWIDDLE_TABLE_32_U16, TWIDDLE_TABLE_32_U32,
     TWIDDLE_TABLE_64_U16, TWIDDLE_TABLE_64_U32, TWIDDLE_TABLE_128_U16, TWIDDLE_TABLE_128_U32,
     TWIDDLE_TABLE_256_U16, TWIDDLE_TABLE_256_U32, TWIDDLE_TABLE_512_U16, TWIDDLE_TABLE_512_U32,
@@ -26,6 +30,7 @@ pub struct CfftI16 {
     pub ifft_flag: bool,
     pub bit_reverse_flag: bool,
     pub twiddle: &'static [u16],
+    pub bit_rev_table: &'static [u16],
 }
 
 impl CfftI16 {
@@ -49,11 +54,25 @@ impl CfftI16 {
             _ => unreachable!(),
         };
 
+        let bit_rev_table: &'static [u16] = match fft_len {
+            16 => &BIT_REV_TABLE_16,
+            32 => &BIT_REV_TABLE_32,
+            64 => &BIT_REV_TABLE_64,
+            128 => &BIT_REV_TABLE_128,
+            256 => &BIT_REV_TABLE_256,
+            512 => &BIT_REV_TABLE_512,
+            1024 => &BIT_REV_TABLE_1024,
+            2048 => &BIT_REV_TABLE_2048,
+            4096 => &BIT_REV_TABLE_4096,
+            _ => unreachable!(),
+        };
+
         Self {
             fft_len,
             ifft_flag,
             bit_reverse_flag,
             twiddle,
+            bit_rev_table,
         }
     }
 
@@ -178,7 +197,7 @@ impl CfftI16 {
         }
 
         if self.bit_reverse_flag {
-            bitreversal_i16(data, self.fft_len);
+            bitreversal_i16(data, self.bit_rev_table);
         }
     }
 }
@@ -188,6 +207,7 @@ pub struct CfftI32 {
     pub ifft_flag: bool,
     pub bit_reverse_flag: bool,
     pub twiddle: &'static [u32],
+    pub bit_rev_table: &'static [u16],
 }
 
 impl CfftI32 {
@@ -211,11 +231,25 @@ impl CfftI32 {
             _ => unreachable!(),
         };
 
+        let bit_rev_table: &'static [u16] = match fft_len {
+            16 => &BIT_REV_TABLE_16,
+            32 => &BIT_REV_TABLE_32,
+            64 => &BIT_REV_TABLE_64,
+            128 => &BIT_REV_TABLE_128,
+            256 => &BIT_REV_TABLE_256,
+            512 => &BIT_REV_TABLE_512,
+            1024 => &BIT_REV_TABLE_1024,
+            2048 => &BIT_REV_TABLE_2048,
+            4096 => &BIT_REV_TABLE_4096,
+            _ => unreachable!(),
+        };
+
         Self {
             fft_len,
             ifft_flag,
             bit_reverse_flag,
             twiddle,
+            bit_rev_table,
         }
     }
 
@@ -339,7 +373,7 @@ impl CfftI32 {
         }
 
         if self.bit_reverse_flag {
-            bitreversal_i32(data, self.fft_len);
+            bitreversal_i32(data, self.bit_rev_table);
         }
     }
 }

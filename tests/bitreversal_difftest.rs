@@ -1,3 +1,7 @@
+use fixed_dsp::common::tables::{
+    BIT_REV_TABLE_16, BIT_REV_TABLE_32, BIT_REV_TABLE_64, BIT_REV_TABLE_128, BIT_REV_TABLE_256,
+    BIT_REV_TABLE_512, BIT_REV_TABLE_1024, BIT_REV_TABLE_2048, BIT_REV_TABLE_4096,
+};
 use fixed_dsp::transform::{bitreversal_i16, bitreversal_i32};
 
 unsafe extern "C" {
@@ -46,6 +50,21 @@ fn table_ptr_and_len(fft_len: usize) -> (*const u16, u16) {
     }
 }
 
+fn bit_rev_table(fft_len: usize) -> &'static [u16] {
+    match fft_len {
+        16 => &BIT_REV_TABLE_16,
+        32 => &BIT_REV_TABLE_32,
+        64 => &BIT_REV_TABLE_64,
+        128 => &BIT_REV_TABLE_128,
+        256 => &BIT_REV_TABLE_256,
+        512 => &BIT_REV_TABLE_512,
+        1024 => &BIT_REV_TABLE_1024,
+        2048 => &BIT_REV_TABLE_2048,
+        4096 => &BIT_REV_TABLE_4096,
+        _ => panic!("unsupported FFT length for bit reversal table: {}", fft_len),
+    }
+}
+
 #[test]
 fn bitreversal_q15_difftest_against_cmsis() {
     for &fft_len in &[16usize, 32, 64, 128, 256, 512, 1024, 2048, 4096] {
@@ -53,7 +72,7 @@ fn bitreversal_q15_difftest_against_cmsis() {
         let mut cmsis_data = rust_data.clone();
         let (table_ptr, bit_rev_len) = table_ptr_and_len(fft_len);
 
-        bitreversal_i16(&mut rust_data, fft_len);
+        bitreversal_i16(&mut rust_data, bit_rev_table(fft_len));
 
         unsafe {
             arm_bitreversal_16(
@@ -78,7 +97,7 @@ fn bitreversal_q31_difftest_against_cmsis() {
         let mut cmsis_data = rust_data.clone();
         let (table_ptr, bit_rev_len) = table_ptr_and_len(fft_len);
 
-        bitreversal_i32(&mut rust_data, fft_len);
+        bitreversal_i32(&mut rust_data, bit_rev_table(fft_len));
 
         unsafe {
             arm_bitreversal_32(
