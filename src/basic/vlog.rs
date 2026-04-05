@@ -2,13 +2,13 @@ const LOG_Q15_ACCURACY: i32 = 15;
 const LOG_Q15_INTEGER_PART: i32 = 4;
 const LOQ_Q15_THRESHOLD: u32 = 1u32 << LOG_Q15_ACCURACY;
 const LOQ_Q15_Q16_HALF: u32 = LOQ_Q15_THRESHOLD;
-const LOG_Q15_INVLOG2EXP: i32 = 0x58b9;
+const LOG_Q15_INVLOG2EXP: i32 = 0x58b9; // 1.0 / ln(2) in Q15 format
 
 const LOG_Q31_ACCURACY: i32 = 31;
 const LOG_Q31_INTEGER_PART: i32 = 5;
 const LOQ_Q31_THRESHOLD: u64 = 1u64 << LOG_Q31_ACCURACY;
 const LOQ_Q31_Q32_HALF: u64 = LOQ_Q31_THRESHOLD;
-const LOG_Q31_INVLOG2EXP: i64 = 0x58b90bfb;
+const LOG_Q31_INVLOG2EXP: i64 = 0x58b90bfb; // 1.0 / ln(2) in Q31 format
 
 fn log_i16(x: i16) -> i16 {
     let src = x as u16 as u32;
@@ -62,9 +62,9 @@ fn log_i32(x: i32) -> i32 {
 
     let mut xn = src as u64;
     if (c - 1) < 0 {
-        xn >>= (1 - c) as u32;
+        xn >>= 1 - c;
     } else {
-        xn <<= (c - 1) as u32;
+        xn <<= c - 1;
     }
 
     let mut y: u64 = 0;

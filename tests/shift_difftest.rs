@@ -36,23 +36,31 @@ fn shift_q15_difftest_against_cmsis() {
 
     let mut max_abs_diff: i16 = 0;
 
-    for &val in &test_values {
-        for &shift_bits in &shift_values {
-            let rust_result = shift_i16(val, shift_bits);
+    for &shift_bits in &shift_values {
+        for &block_size in &[1usize, 2, 3, 4, 7, 16, 22] {
+            let mut rust_data = test_values[..block_size].to_vec();
+            let mut cmsis_data = rust_data.clone();
 
-            let mut cmsis_result = 0_i16;
+            shift_i16(&mut rust_data, shift_bits);
             unsafe {
-                arm_shift_q15(&val, shift_bits, &mut cmsis_result, 1);
+                arm_shift_q15(
+                    cmsis_data.as_ptr(),
+                    shift_bits,
+                    cmsis_data.as_mut_ptr(),
+                    block_size as u32,
+                );
             }
 
-            let diff = (rust_result as i32 - cmsis_result as i32).abs() as i16;
-            max_abs_diff = max_abs_diff.max(diff);
+            for i in 0..block_size {
+                let diff = (rust_data[i] as i32 - cmsis_data[i] as i32).abs() as i16;
+                max_abs_diff = max_abs_diff.max(diff);
 
-            assert_eq!(
-                rust_result, cmsis_result,
-                "Q15 shift mismatch for val={}, shift_bits={}: rust={}, cmsis={}",
-                val, shift_bits, rust_result, cmsis_result
-            );
+                assert_eq!(
+                    rust_data[i], cmsis_data[i],
+                    "Q15 shift mismatch idx={}, shift_bits={}: rust={}, cmsis={}",
+                    i, shift_bits, rust_data[i], cmsis_data[i]
+                );
+            }
         }
     }
 
@@ -91,27 +99,31 @@ fn shift_q31_difftest_against_cmsis() {
 
     let mut max_abs_diff: i64 = 0;
 
-    for &val in &test_values {
-        for &shift_bits in &shift_values {
-            if val == i32::MIN && shift_bits > 0 {
-                continue;
-            }
+    for &shift_bits in &shift_values {
+        for &block_size in &[1usize, 2, 3, 4, 7, 16, 22] {
+            let mut rust_data = test_values[..block_size].to_vec();
+            let mut cmsis_data = rust_data.clone();
 
-            let rust_result = shift_i32(val, shift_bits);
-
-            let mut cmsis_result = 0_i32;
+            shift_i32(&mut rust_data, shift_bits);
             unsafe {
-                arm_shift_q31(&val, shift_bits, &mut cmsis_result, 1);
+                arm_shift_q31(
+                    cmsis_data.as_ptr(),
+                    shift_bits,
+                    cmsis_data.as_mut_ptr(),
+                    block_size as u32,
+                );
             }
 
-            let diff = (rust_result as i64 - cmsis_result as i64).abs();
-            max_abs_diff = max_abs_diff.max(diff);
+            for i in 0..block_size {
+                let diff = (rust_data[i] as i64 - cmsis_data[i] as i64).abs();
+                max_abs_diff = max_abs_diff.max(diff);
 
-            assert_eq!(
-                rust_result, cmsis_result,
-                "Q31 shift mismatch for val={}, shift_bits={}: rust={}, cmsis={}",
-                val, shift_bits, rust_result, cmsis_result
-            );
+                assert_eq!(
+                    rust_data[i], cmsis_data[i],
+                    "Q31 shift mismatch idx={}, shift_bits={}: rust={}, cmsis={}",
+                    i, shift_bits, rust_data[i], cmsis_data[i]
+                );
+            }
         }
     }
 
