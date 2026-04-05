@@ -21,14 +21,14 @@ fn i32_mul(a: i32, b: i32) -> i32 {
     (((a as i64 * b as i64) + 0x8000_0000) >> 32) as i32
 }
 
-pub struct CfftConfigI16 {
+pub struct CfftI16 {
     pub fft_len: usize,
     pub ifft_flag: bool,
     pub bit_reverse_flag: bool,
     pub twiddle: &'static [u16],
 }
 
-impl CfftConfigI16 {
+impl CfftI16 {
     pub const fn new(fft_len: usize, ifft_flag: bool, bit_reverse_flag: bool) -> Self {
         assert!(fft_len.is_power_of_two(), "fft_len must be a power of two");
         assert!(
@@ -57,12 +57,7 @@ impl CfftConfigI16 {
         }
     }
 
-    fn radix4by2_butterfly_i16(
-        data: &mut [i16],
-        fft_len: usize,
-        twiddle: &[u16],
-        radix4_modifier: u16,
-    ) {
+    fn radix4by2_butterfly_i16(data: &mut [i16], fft_len: usize, twiddle: &[u16], modifier: u16) {
         let n2 = fft_len >> 1;
 
         for i in 0..n2 {
@@ -89,8 +84,8 @@ impl CfftConfigI16 {
             data[2 * l + 1] = out_im;
         }
 
-        radix4_butterfly_i16(&mut data[..fft_len], n2, twiddle, radix4_modifier);
-        radix4_butterfly_i16(&mut data[fft_len..], n2, twiddle, radix4_modifier);
+        radix4_butterfly_i16(&mut data[..fft_len], n2, twiddle, modifier);
+        radix4_butterfly_i16(&mut data[fft_len..], n2, twiddle, modifier);
 
         for i in 0..n2 {
             data[4 * i] = data[4 * i].wrapping_shl(1);
@@ -104,7 +99,7 @@ impl CfftConfigI16 {
         data: &mut [i16],
         fft_len: usize,
         twiddle: &[u16],
-        radix4_modifier: u16,
+        modifier: u16,
     ) {
         let n2 = fft_len >> 1;
 
@@ -132,8 +127,8 @@ impl CfftConfigI16 {
             data[2 * l + 1] = out_im;
         }
 
-        radix4_butterfly_inverse_i16(&mut data[..fft_len], n2, twiddle, radix4_modifier);
-        radix4_butterfly_inverse_i16(&mut data[fft_len..], n2, twiddle, radix4_modifier);
+        radix4_butterfly_inverse_i16(&mut data[..fft_len], n2, twiddle, modifier);
+        radix4_butterfly_inverse_i16(&mut data[fft_len..], n2, twiddle, modifier);
 
         for i in 0..n2 {
             data[4 * i] = data[4 * i].wrapping_shl(1);
@@ -144,7 +139,7 @@ impl CfftConfigI16 {
     }
 
     /// Q15 CFFT/CIFFT entry compatible with CMSIS `arm_cfft_q15` dispatch behavior.
-    pub fn cfft_i16(self, data: &mut [i16]) {
+    pub fn run(self, data: &mut [i16]) {
         assert_eq!(
             data.len(),
             self.fft_len * 2,
@@ -188,14 +183,14 @@ impl CfftConfigI16 {
     }
 }
 
-pub struct CfftConfigI32 {
+pub struct CfftI32 {
     pub fft_len: usize,
     pub ifft_flag: bool,
     pub bit_reverse_flag: bool,
     pub twiddle: &'static [u32],
 }
 
-impl CfftConfigI32 {
+impl CfftI32 {
     pub const fn new(fft_len: usize, ifft_flag: bool, bit_reverse_flag: bool) -> Self {
         assert!(fft_len.is_power_of_two(), "fft_len must be a power of two");
         assert!(
@@ -305,7 +300,7 @@ impl CfftConfigI32 {
     }
 
     /// Q31 CFFT/CIFFT entry with the same dispatch pattern as CMSIS `arm_cfft_q31`.
-    pub fn cfft_i32(&self, data: &mut [i32]) {
+    pub fn run(&self, data: &mut [i32]) {
         assert_eq!(
             data.len(),
             self.fft_len * 2,
