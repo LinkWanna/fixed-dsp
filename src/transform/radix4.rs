@@ -1,8 +1,13 @@
-use crate::common::tables::TWIDDLE_TABLE_4096_U16;
+use crate::common::tables::{TWIDDLE_TABLE_4096_U16, TWIDDLE_TABLE_4096_U32};
 
 #[inline]
 fn sat_i16(v: i32) -> i16 {
     v.clamp(i16::MIN as i32, i16::MAX as i32) as i16
+}
+
+#[inline]
+fn i32_mul(a: i32, b: i32) -> i32 {
+    ((a as i64 * b as i64) >> 32) as i32
 }
 
 /// Performs radix-4 DIF butterfly computation for Q15 fixed-point FFT.
@@ -443,5 +448,303 @@ pub fn radix4_butterfly_inverse_i16(data: &mut [i16], fft_len: usize, mut twiddl
         data[i3 * 2 + 1] = ((s1 as i32 >> 1) - (tdiff0 >> 1)) as i16;
 
         i0 += n1;
+    }
+}
+
+pub fn radix4_butterfly_i32(data: &mut [i32], fft_len: usize, mut twiddle_modifier: u16) {
+    let twiddles = &TWIDDLE_TABLE_4096_U32;
+
+    let mut n2 = fft_len;
+    let mut n1;
+    n2 >>= 2;
+
+    let mut i0 = 0usize;
+    let mut ia1 = 0usize;
+    let mut j = n2;
+
+    while j > 0 {
+        let i1 = i0 + n2;
+        let i2 = i1 + n2;
+        let i3 = i2 + n2;
+
+        let mut r1 = (data[2 * i0] >> 4) + (data[2 * i2] >> 4);
+        let mut r2 = (data[2 * i0] >> 4) - (data[2 * i2] >> 4);
+        let mut t1 = (data[2 * i1] >> 4) + (data[2 * i3] >> 4);
+        let mut s1 = (data[2 * i0 + 1] >> 4) + (data[2 * i2 + 1] >> 4);
+        let mut s2 = (data[2 * i0 + 1] >> 4) - (data[2 * i2 + 1] >> 4);
+
+        data[2 * i0] = r1 + t1;
+        r1 -= t1;
+        let t2 = (data[2 * i1 + 1] >> 4) + (data[2 * i3 + 1] >> 4);
+        data[2 * i0 + 1] = s1 + t2;
+        s1 -= t2;
+
+        t1 = (data[2 * i1 + 1] >> 4) - (data[2 * i3 + 1] >> 4);
+        let t2 = (data[2 * i1] >> 4) - (data[2 * i3] >> 4);
+
+        let ia2 = 2 * ia1;
+        let co2 = twiddles[2 * ia2] as i32;
+        let si2 = twiddles[2 * ia2 + 1] as i32;
+
+        data[2 * i1] = (i32_mul(r1, co2) + i32_mul(s1, si2)) << 1;
+        data[2 * i1 + 1] = (i32_mul(s1, co2) - i32_mul(r1, si2)) << 1;
+
+        r1 = r2 + t1;
+        r2 -= t1;
+        s1 = s2 - t2;
+        s2 += t2;
+
+        let co1 = twiddles[2 * ia1] as i32;
+        let si1 = twiddles[2 * ia1 + 1] as i32;
+        data[2 * i2] = (i32_mul(r1, co1) + i32_mul(s1, si1)) << 1;
+        data[2 * i2 + 1] = (i32_mul(s1, co1) - i32_mul(r1, si1)) << 1;
+
+        let ia3 = 3 * ia1;
+        let co3 = twiddles[2 * ia3] as i32;
+        let si3 = twiddles[2 * ia3 + 1] as i32;
+        data[2 * i3] = (i32_mul(r2, co3) + i32_mul(s2, si3)) << 1;
+        data[2 * i3 + 1] = (i32_mul(s2, co3) - i32_mul(r2, si3)) << 1;
+
+        ia1 += twiddle_modifier as usize;
+        i0 += 1;
+        j -= 1;
+    }
+
+    twiddle_modifier <<= 2;
+
+    let mut k = fft_len / 4;
+    while k > 4 {
+        n1 = n2;
+        n2 >>= 2;
+        ia1 = 0;
+
+        for j in 0..n2 {
+            let ia2 = ia1 + ia1;
+            let ia3 = ia2 + ia1;
+
+            let co1 = twiddles[2 * ia1] as i32;
+            let si1 = twiddles[2 * ia1 + 1] as i32;
+            let co2 = twiddles[2 * ia2] as i32;
+            let si2 = twiddles[2 * ia2 + 1] as i32;
+            let co3 = twiddles[2 * ia3] as i32;
+            let si3 = twiddles[2 * ia3 + 1] as i32;
+            ia1 += twiddle_modifier as usize;
+
+            let mut i0 = j;
+            while i0 < fft_len {
+                let i1 = i0 + n2;
+                let i2 = i1 + n2;
+                let i3 = i2 + n2;
+
+                let mut r1 = data[2 * i0] + data[2 * i2];
+                let mut r2 = data[2 * i0] - data[2 * i2];
+                let mut s1 = data[2 * i0 + 1] + data[2 * i2 + 1];
+                let mut s2 = data[2 * i0 + 1] - data[2 * i2 + 1];
+
+                let mut t1 = data[2 * i1] + data[2 * i3];
+                data[2 * i0] = (r1 + t1) >> 2;
+                r1 -= t1;
+
+                let t2 = data[2 * i1 + 1] + data[2 * i3 + 1];
+                data[2 * i0 + 1] = (s1 + t2) >> 2;
+                s1 -= t2;
+
+                t1 = data[2 * i1 + 1] - data[2 * i3 + 1];
+                let t2 = data[2 * i1] - data[2 * i3];
+
+                data[2 * i1] = (i32_mul(r1, co2) + i32_mul(s1, si2)) >> 1;
+                data[2 * i1 + 1] = (i32_mul(s1, co2) - i32_mul(r1, si2)) >> 1;
+
+                r1 = r2 + t1;
+                r2 -= t1;
+                s1 = s2 - t2;
+                s2 += t2;
+
+                data[2 * i2] = (i32_mul(r1, co1) + i32_mul(s1, si1)) >> 1;
+                data[2 * i2 + 1] = (i32_mul(s1, co1) - i32_mul(r1, si1)) >> 1;
+
+                data[2 * i3] = (i32_mul(r2, co3) + i32_mul(s2, si3)) >> 1;
+                data[2 * i3 + 1] = (i32_mul(s2, co3) - i32_mul(r2, si3)) >> 1;
+
+                i0 += n1;
+            }
+        }
+
+        twiddle_modifier <<= 2;
+        k >>= 2;
+    }
+
+    let mut ptr = 0usize;
+    let mut j = fft_len >> 2;
+    while j > 0 {
+        let xa = data[ptr];
+        let ya = data[ptr + 1];
+        let xb = data[ptr + 2];
+        let yb = data[ptr + 3];
+        let xc = data[ptr + 4];
+        let yc = data[ptr + 5];
+        let xd = data[ptr + 6];
+        let yd = data[ptr + 7];
+
+        data[ptr] = xa + xb + xc + xd;
+        data[ptr + 1] = ya + yb + yc + yd;
+        data[ptr + 2] = xa - xb + xc - xd;
+        data[ptr + 3] = ya - yb + yc - yd;
+        data[ptr + 4] = xa + yb - xc - yd;
+        data[ptr + 5] = ya - xb - yc + xd;
+        data[ptr + 6] = xa - yb - xc + yd;
+        data[ptr + 7] = ya + xb - yc - xd;
+
+        ptr += 8;
+        j -= 1;
+    }
+}
+
+pub fn radix4_butterfly_inverse_i32(data: &mut [i32], fft_len: usize, mut twiddle_modifier: u16) {
+    let twiddles = &TWIDDLE_TABLE_4096_U32;
+
+    let mut n2 = fft_len;
+    let mut n1;
+    n2 >>= 2;
+
+    let mut i0 = 0usize;
+    let mut ia1 = 0usize;
+    let mut j = n2;
+
+    while j > 0 {
+        let i1 = i0 + n2;
+        let i2 = i1 + n2;
+        let i3 = i2 + n2;
+
+        let mut r1 = (data[2 * i0] >> 4) + (data[2 * i2] >> 4);
+        let mut r2 = (data[2 * i0] >> 4) - (data[2 * i2] >> 4);
+        let mut t1 = (data[2 * i1] >> 4) + (data[2 * i3] >> 4);
+        let mut s1 = (data[2 * i0 + 1] >> 4) + (data[2 * i2 + 1] >> 4);
+        let mut s2 = (data[2 * i0 + 1] >> 4) - (data[2 * i2 + 1] >> 4);
+
+        data[2 * i0] = r1 + t1;
+        r1 -= t1;
+        let t2 = (data[2 * i1 + 1] >> 4) + (data[2 * i3 + 1] >> 4);
+        data[2 * i0 + 1] = s1 + t2;
+        s1 -= t2;
+
+        t1 = (data[2 * i1 + 1] >> 4) - (data[2 * i3 + 1] >> 4);
+        let t2 = (data[2 * i1] >> 4) - (data[2 * i3] >> 4);
+
+        let ia2 = 2 * ia1;
+        let co2 = twiddles[2 * ia2] as i32;
+        let si2 = twiddles[2 * ia2 + 1] as i32;
+
+        data[2 * i1] = (i32_mul(r1, co2) - i32_mul(s1, si2)) << 1;
+        data[2 * i1 + 1] = (i32_mul(s1, co2) + i32_mul(r1, si2)) << 1;
+
+        r1 = r2 - t1;
+        r2 += t1;
+        s1 = s2 + t2;
+        s2 -= t2;
+
+        let co1 = twiddles[2 * ia1] as i32;
+        let si1 = twiddles[2 * ia1 + 1] as i32;
+        data[2 * i2] = (i32_mul(r1, co1) - i32_mul(s1, si1)) << 1;
+        data[2 * i2 + 1] = (i32_mul(s1, co1) + i32_mul(r1, si1)) << 1;
+
+        let ia3 = 3 * ia1;
+        let co3 = twiddles[2 * ia3] as i32;
+        let si3 = twiddles[2 * ia3 + 1] as i32;
+        data[2 * i3] = (i32_mul(r2, co3) - i32_mul(s2, si3)) << 1;
+        data[2 * i3 + 1] = (i32_mul(s2, co3) + i32_mul(r2, si3)) << 1;
+
+        ia1 += twiddle_modifier as usize;
+        i0 += 1;
+        j -= 1;
+    }
+
+    twiddle_modifier <<= 2;
+
+    let mut k = fft_len / 4;
+    while k > 4 {
+        n1 = n2;
+        n2 >>= 2;
+        ia1 = 0;
+
+        for j in 0..n2 {
+            let ia2 = ia1 + ia1;
+            let ia3 = ia2 + ia1;
+
+            let co1 = twiddles[2 * ia1] as i32;
+            let si1 = twiddles[2 * ia1 + 1] as i32;
+            let co2 = twiddles[2 * ia2] as i32;
+            let si2 = twiddles[2 * ia2 + 1] as i32;
+            let co3 = twiddles[2 * ia3] as i32;
+            let si3 = twiddles[2 * ia3 + 1] as i32;
+            ia1 += twiddle_modifier as usize;
+
+            let mut i0 = j;
+            while i0 < fft_len {
+                let i1 = i0 + n2;
+                let i2 = i1 + n2;
+                let i3 = i2 + n2;
+
+                let mut r1 = data[2 * i0] + data[2 * i2];
+                let mut r2 = data[2 * i0] - data[2 * i2];
+                let mut s1 = data[2 * i0 + 1] + data[2 * i2 + 1];
+                let mut s2 = data[2 * i0 + 1] - data[2 * i2 + 1];
+
+                let mut t1 = data[2 * i1] + data[2 * i3];
+                data[2 * i0] = (r1 + t1) >> 2;
+                r1 -= t1;
+
+                let t2 = data[2 * i1 + 1] + data[2 * i3 + 1];
+                data[2 * i0 + 1] = (s1 + t2) >> 2;
+                s1 -= t2;
+
+                t1 = data[2 * i1 + 1] - data[2 * i3 + 1];
+                let t2 = data[2 * i1] - data[2 * i3];
+
+                data[2 * i1] = (i32_mul(r1, co2) - i32_mul(s1, si2)) >> 1;
+                data[2 * i1 + 1] = (i32_mul(s1, co2) + i32_mul(r1, si2)) >> 1;
+
+                r1 = r2 - t1;
+                r2 += t1;
+                s1 = s2 + t2;
+                s2 -= t2;
+
+                data[2 * i2] = (i32_mul(r1, co1) - i32_mul(s1, si1)) >> 1;
+                data[2 * i2 + 1] = (i32_mul(s1, co1) + i32_mul(r1, si1)) >> 1;
+
+                data[2 * i3] = (i32_mul(r2, co3) - i32_mul(s2, si3)) >> 1;
+                data[2 * i3 + 1] = (i32_mul(s2, co3) + i32_mul(r2, si3)) >> 1;
+
+                i0 += n1;
+            }
+        }
+
+        twiddle_modifier <<= 2;
+        k >>= 2;
+    }
+
+    let mut ptr = 0usize;
+    let mut j = fft_len >> 2;
+    while j > 0 {
+        let xa = data[ptr];
+        let ya = data[ptr + 1];
+        let xb = data[ptr + 2];
+        let yb = data[ptr + 3];
+        let xc = data[ptr + 4];
+        let yc = data[ptr + 5];
+        let xd = data[ptr + 6];
+        let yd = data[ptr + 7];
+
+        data[ptr] = xa + xb + xc + xd;
+        data[ptr + 1] = ya + yb + yc + yd;
+        data[ptr + 2] = xa - xb + xc - xd;
+        data[ptr + 3] = ya - yb + yc - yd;
+        data[ptr + 4] = xa - yb - xc + yd;
+        data[ptr + 5] = ya + xb - yc - xd;
+        data[ptr + 6] = xa + yb - xc - yd;
+        data[ptr + 7] = ya - xb - yc + xd;
+
+        ptr += 8;
+        j -= 1;
     }
 }
