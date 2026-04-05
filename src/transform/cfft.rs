@@ -6,12 +6,12 @@ use super::{
 };
 
 #[inline]
-fn q15_mul(a: i16, b: i16) -> i16 {
+fn i16_mul(a: i16, b: i16) -> i16 {
     (((a as i32) * (b as i32)) >> 16) as i16
 }
 
 #[inline]
-fn q31_mul_r(a: i32, b: i32) -> i32 {
+fn i32_mul(a: i32, b: i32) -> i32 {
     (((a as i64 * b as i64) + 0x8000_0000) >> 32) as i32
 }
 
@@ -36,8 +36,8 @@ fn radix4by2_butterfly_i16(data: &mut [i16], fft_len: usize, twiddle_modifier: u
         data[2 * i] = ((t_re_half + s_re_half) >> 1) as i16;
         data[2 * i + 1] = ((t_im_half + s_im_half) >> 1) as i16;
 
-        let out_re = q15_mul(xt, cos_val).wrapping_add(q15_mul(yt, sin_val));
-        let out_im = q15_mul(yt, cos_val).wrapping_sub(q15_mul(xt, sin_val));
+        let out_re = i16_mul(xt, cos_val).wrapping_add(i16_mul(yt, sin_val));
+        let out_im = i16_mul(yt, cos_val).wrapping_sub(i16_mul(xt, sin_val));
 
         data[2 * l] = out_re;
         data[2 * l + 1] = out_im;
@@ -76,8 +76,8 @@ fn radix4by2_butterfly_inverse_i16(data: &mut [i16], fft_len: usize, twiddle_mod
         data[2 * i] = ((t_re_half + s_re_half) >> 1) as i16;
         data[2 * i + 1] = ((t_im_half + s_im_half) >> 1) as i16;
 
-        let out_re = q15_mul(xt, cos_val).wrapping_sub(q15_mul(yt, sin_val));
-        let out_im = q15_mul(yt, cos_val).wrapping_add(q15_mul(xt, sin_val));
+        let out_re = i16_mul(xt, cos_val).wrapping_sub(i16_mul(yt, sin_val));
+        let out_im = i16_mul(yt, cos_val).wrapping_add(i16_mul(xt, sin_val));
 
         data[2 * l] = out_re;
         data[2 * l + 1] = out_im;
@@ -157,10 +157,10 @@ fn radix4by2_butterfly_i32(data: &mut [i32], fft_len: usize, twiddle_modifier: u
         let yt = (data[2 * i + 1] >> 2) - (data[2 * l + 1] >> 2);
         data[2 * i + 1] = (data[2 * l + 1] >> 2) + (data[2 * i + 1] >> 2);
 
-        let mut out_re = q31_mul_r(xt, cos_val);
-        let mut out_im = q31_mul_r(yt, cos_val);
-        out_re = out_re.wrapping_add(q31_mul_r(yt, sin_val));
-        out_im = out_im.wrapping_sub(q31_mul_r(xt, sin_val));
+        let mut out_re = i32_mul(xt, cos_val);
+        let mut out_im = i32_mul(yt, cos_val);
+        out_re = out_re.wrapping_add(i32_mul(yt, sin_val));
+        out_im = out_im.wrapping_sub(i32_mul(xt, sin_val));
 
         data[2 * l] = out_re.wrapping_shl(1);
         data[2 * l + 1] = out_im.wrapping_shl(1);
@@ -194,10 +194,10 @@ fn radix4by2_butterfly_inverse_i32(data: &mut [i32], fft_len: usize, twiddle_mod
         let yt = (data[2 * i + 1] >> 2) - (data[2 * l + 1] >> 2);
         data[2 * i + 1] = (data[2 * l + 1] >> 2) + (data[2 * i + 1] >> 2);
 
-        let mut out_re = q31_mul_r(xt, cos_val);
-        let mut out_im = q31_mul_r(yt, cos_val);
-        out_re = out_re.wrapping_sub(q31_mul_r(yt, sin_val));
-        out_im = out_im.wrapping_add(q31_mul_r(xt, sin_val));
+        let mut out_re = i32_mul(xt, cos_val);
+        let mut out_im = i32_mul(yt, cos_val);
+        out_re = out_re.wrapping_sub(i32_mul(yt, sin_val));
+        out_im = out_im.wrapping_add(i32_mul(xt, sin_val));
 
         data[2 * l] = out_re.wrapping_shl(1);
         data[2 * l + 1] = out_im.wrapping_shl(1);
