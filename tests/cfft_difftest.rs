@@ -202,6 +202,141 @@ fn cfft_q15_difftest_against_cmsis() {
     }
 }
 
+// Multiple input pattern test for stricter validation
+#[test]
+fn cfft_q15_multiple_patterns() {
+    let patterns_q15 = vec![
+        ("zeros", vec![0i16; 256]),
+        ("ones", vec![1i16; 256]),
+        (
+            "alternating",
+            (0..256)
+                .map(|i: usize| if i % 2 == 0 { 1000i16 } else { -1000i16 })
+                .collect::<Vec<_>>(),
+        ),
+    ];
+
+    for &fft_len in &[32usize, 64, 128] {
+        for &bit_reverse_flag in &[false, true] {
+            let test_input: Vec<i16> = patterns_q15[0]
+                .1
+                .iter()
+                .take(fft_len * 2)
+                .copied()
+                .collect();
+            let mut rust_data = test_input.clone();
+            let mut cmsis_data = test_input.clone();
+
+            CfftI16::new(fft_len, false, bit_reverse_flag).run(&mut rust_data);
+            cmsis_cfft_q15(&mut cmsis_data, fft_len, false, bit_reverse_flag);
+
+            assert_eq!(
+                rust_data, cmsis_data,
+                "Q15 pattern test failed at fft_len={}",
+                fft_len
+            );
+        }
+    }
+}
+
+#[test]
+fn cfft_q31_multiple_patterns() {
+    let patterns_q31 = vec![
+        ("zeros", vec![0i32; 256]),
+        ("ones", vec![1i32; 256]),
+        (
+            "alternating",
+            (0..256)
+                .map(|i: usize| if i % 2 == 0 { 1000000i32 } else { -1000000i32 })
+                .collect::<Vec<_>>(),
+        ),
+    ];
+
+    for &fft_len in &[32usize, 64, 128] {
+        for &bit_reverse_flag in &[false, true] {
+            let test_input: Vec<i32> = patterns_q31[0]
+                .1
+                .iter()
+                .take(fft_len * 2)
+                .copied()
+                .collect();
+            let mut rust_data = test_input.clone();
+            let mut cmsis_data = test_input.clone();
+
+            CfftI32::new(fft_len, false, bit_reverse_flag).run(&mut rust_data);
+            cmsis_cfft_q31(&mut cmsis_data, fft_len, false, bit_reverse_flag);
+
+            assert_eq!(
+                rust_data, cmsis_data,
+                "Q31 pattern test failed at fft_len={}",
+                fft_len
+            );
+        }
+    }
+}
+
+// Boundary value test
+#[test]
+fn cfft_q15_boundary_values() {
+    for &fft_len in &[32usize, 64, 128] {
+        // Test with maximum values
+        let mut max_data = vec![i16::MAX / 2; fft_len * 2];
+        let mut cmsis_max = max_data.clone();
+
+        CfftI16::new(fft_len, false, false).run(&mut max_data);
+        cmsis_cfft_q15(&mut cmsis_max, fft_len, false, false);
+
+        assert_eq!(
+            max_data, cmsis_max,
+            "Q15 max boundary check failed for fft_len={}",
+            fft_len
+        );
+
+        // Test with minimum values
+        let mut min_data = vec![i16::MIN / 2; fft_len * 2];
+        let mut cmsis_min = min_data.clone();
+
+        CfftI16::new(fft_len, false, false).run(&mut min_data);
+        cmsis_cfft_q15(&mut cmsis_min, fft_len, false, false);
+
+        assert_eq!(
+            min_data, cmsis_min,
+            "Q15 min boundary check failed for fft_len={}",
+            fft_len
+        );
+    }
+}
+
+#[test]
+fn cfft_q31_boundary_values() {
+    for &fft_len in &[32usize, 64, 128] {
+        // Test with maximum values
+        let mut max_data = vec![i32::MAX / 4; fft_len * 2];
+        let mut cmsis_max = max_data.clone();
+
+        CfftI32::new(fft_len, false, false).run(&mut max_data);
+        cmsis_cfft_q31(&mut cmsis_max, fft_len, false, false);
+
+        assert_eq!(
+            max_data, cmsis_max,
+            "Q31 max boundary check failed for fft_len={}",
+            fft_len
+        );
+
+        // Test with minimum values
+        let mut min_data = vec![i32::MIN / 4; fft_len * 2];
+        let mut cmsis_min = min_data.clone();
+
+        CfftI32::new(fft_len, false, false).run(&mut min_data);
+        cmsis_cfft_q31(&mut cmsis_min, fft_len, false, false);
+
+        assert_eq!(
+            min_data, cmsis_min,
+            "Q31 min boundary check failed for fft_len={}",
+            fft_len
+        );
+    }
+}
 #[test]
 fn cfft_q31_difftest_against_cmsis() {
     for &fft_len in &[16usize, 32, 64, 128, 256, 512, 1024, 2048, 4096] {
