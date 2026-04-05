@@ -1,16 +1,19 @@
 use fixed_dsp::transform::{bitreversal_i16, bitreversal_i32};
 
 unsafe extern "C" {
-    static armBitRevTable: [u16; 1024];
+    static armBitRevIndexTable_fixed_16: u16;
+    static armBitRevIndexTable_fixed_32: u16;
+    static armBitRevIndexTable_fixed_64: u16;
+    static armBitRevIndexTable_fixed_128: u16;
+    static armBitRevIndexTable_fixed_256: u16;
+    static armBitRevIndexTable_fixed_512: u16;
+    static armBitRevIndexTable_fixed_1024: u16;
+    static armBitRevIndexTable_fixed_2048: u16;
+    static armBitRevIndexTable_fixed_4096: u16;
 
-    fn arm_bitreversal_q15(
-        pSrc16: *mut i16,
-        fftLen: u32,
-        bitRevFactor: u16,
-        pBitRevTab: *const u16,
-    );
+    fn arm_bitreversal_16(pSrc: *mut u16, bitRevLen: u16, pBitRevTab: *const u16);
 
-    fn arm_bitreversal_q31(pSrc: *mut i32, fftLen: u32, bitRevFactor: u16, pBitRevTab: *const u16);
+    fn arm_bitreversal_32(pSrc: *mut u32, bitRevLen: u16, pBitRevTab: *const u16);
 }
 
 fn sample_i16_buffer(fft_len: usize) -> Vec<i16> {
@@ -25,18 +28,21 @@ fn sample_i32_buffer(fft_len: usize) -> Vec<i32> {
         .collect()
 }
 
-fn table_offset_and_factor(fft_len: usize) -> (usize, u16) {
+fn table_ptr_and_len(fft_len: usize) -> (*const u16, u16) {
     match fft_len {
-        16 => (255, 256),
-        32 => (127, 128),
-        64 => (63, 64),
-        128 => (31, 32),
-        256 => (15, 16),
-        512 => (7, 8),
-        1024 => (3, 4),
-        2048 => (1, 2),
-        4096 => (0, 1),
-        _ => panic!("unsupported FFT length for CMSIS bit reversal: {}", fft_len),
+        16 => (&raw const armBitRevIndexTable_fixed_16, 12),
+        32 => (&raw const armBitRevIndexTable_fixed_32, 24),
+        64 => (&raw const armBitRevIndexTable_fixed_64, 56),
+        128 => (&raw const armBitRevIndexTable_fixed_128, 112),
+        256 => (&raw const armBitRevIndexTable_fixed_256, 240),
+        512 => (&raw const armBitRevIndexTable_fixed_512, 480),
+        1024 => (&raw const armBitRevIndexTable_fixed_1024, 992),
+        2048 => (&raw const armBitRevIndexTable_fixed_2048, 1984),
+        4096 => (&raw const armBitRevIndexTable_fixed_4096, 4032),
+        _ => panic!(
+            "unsupported FFT length for CMSIS new-entry bit reversal: {}",
+            fft_len
+        ),
     }
 }
 
@@ -45,16 +51,15 @@ fn bitreversal_q15_difftest_against_cmsis() {
     for &fft_len in &[16usize, 32, 64, 128, 256, 512, 1024, 2048, 4096] {
         let mut rust_data = sample_i16_buffer(fft_len);
         let mut cmsis_data = rust_data.clone();
-        let (offset, factor) = table_offset_and_factor(fft_len);
+        let (table_ptr, bit_rev_len) = table_ptr_and_len(fft_len);
 
         bitreversal_i16(&mut rust_data, fft_len);
 
         unsafe {
-            arm_bitreversal_q15(
-                cmsis_data.as_mut_ptr(),
-                fft_len as u32,
-                factor,
-                armBitRevTable.as_ptr().add(offset),
+            arm_bitreversal_16(
+                cmsis_data.as_mut_ptr().cast::<u16>(),
+                bit_rev_len,
+                table_ptr,
             );
         }
 
@@ -71,16 +76,15 @@ fn bitreversal_q31_difftest_against_cmsis() {
     for &fft_len in &[16usize, 32, 64, 128, 256, 512, 1024, 2048, 4096] {
         let mut rust_data = sample_i32_buffer(fft_len);
         let mut cmsis_data = rust_data.clone();
-        let (offset, factor) = table_offset_and_factor(fft_len);
+        let (table_ptr, bit_rev_len) = table_ptr_and_len(fft_len);
 
         bitreversal_i32(&mut rust_data, fft_len);
 
         unsafe {
-            arm_bitreversal_q31(
-                cmsis_data.as_mut_ptr(),
-                fft_len as u32,
-                factor,
-                armBitRevTable.as_ptr().add(offset),
+            arm_bitreversal_32(
+                cmsis_data.as_mut_ptr().cast::<u32>(),
+                bit_rev_len,
+                table_ptr,
             );
         }
 

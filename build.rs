@@ -12,6 +12,7 @@ fn main() {
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/BasicMathFunctions/arm_dot_prod_q15.c");
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/BasicMathFunctions/arm_dot_prod_q31.c");
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/TransformFunctions/arm_bitreversal.c");
+    println!("cargo:rerun-if-changed=CMSIS-DSP/Source/TransformFunctions/arm_bitreversal2.c");
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/TransformFunctions/arm_cfft_radix2_q15.c");
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/TransformFunctions/arm_cfft_radix2_q31.c");
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/TransformFunctions/arm_cfft_radix4_q15.c");
@@ -36,6 +37,7 @@ fn main() {
         .file("CMSIS-DSP/Source/BasicMathFunctions/arm_dot_prod_q15.c")
         .file("CMSIS-DSP/Source/BasicMathFunctions/arm_dot_prod_q31.c")
         .file("CMSIS-DSP/Source/TransformFunctions/arm_bitreversal.c")
+        .file("CMSIS-DSP/Source/TransformFunctions/arm_bitreversal2.c")
         .file("CMSIS-DSP/Source/TransformFunctions/arm_cfft_radix2_q15.c")
         .file("CMSIS-DSP/Source/TransformFunctions/arm_cfft_radix2_q31.c")
         .file("CMSIS-DSP/Source/TransformFunctions/arm_cfft_radix4_q15.c")

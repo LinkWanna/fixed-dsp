@@ -1,16 +1,19 @@
-use crate::common::tables::BIT_REV_TABLE;
+use crate::common::tables::{
+    BIT_REV_TABLE_16, BIT_REV_TABLE_32, BIT_REV_TABLE_64, BIT_REV_TABLE_128, BIT_REV_TABLE_256,
+    BIT_REV_TABLE_512, BIT_REV_TABLE_1024, BIT_REV_TABLE_2048, BIT_REV_TABLE_4096,
+};
 
-fn bit_reversal_table(fft_len: usize) -> (&'static [u16], u16) {
+fn bit_rev_table(fft_len: usize) -> &'static [u16] {
     match fft_len {
-        16 => (&BIT_REV_TABLE[255..], 256),
-        32 => (&BIT_REV_TABLE[127..], 128),
-        64 => (&BIT_REV_TABLE[63..], 64),
-        128 => (&BIT_REV_TABLE[31..], 32),
-        256 => (&BIT_REV_TABLE[15..], 16),
-        512 => (&BIT_REV_TABLE[7..], 8),
-        1024 => (&BIT_REV_TABLE[3..], 4),
-        2048 => (&BIT_REV_TABLE[1..], 2),
-        4096 => (&BIT_REV_TABLE[0..], 1),
+        16 => &BIT_REV_TABLE_16,
+        32 => &BIT_REV_TABLE_32,
+        64 => &BIT_REV_TABLE_64,
+        128 => &BIT_REV_TABLE_128,
+        256 => &BIT_REV_TABLE_256,
+        512 => &BIT_REV_TABLE_512,
+        1024 => &BIT_REV_TABLE_1024,
+        2048 => &BIT_REV_TABLE_2048,
+        4096 => &BIT_REV_TABLE_4096,
         _ => panic!(
             "unsupported fft_len: {} (expected power-of-two in [16, 4096])",
             fft_len
@@ -25,28 +28,21 @@ pub fn bitreversal_i16(data: &mut [i16], fft_len: usize) {
         "Q15 buffer length must be 2 * fft_len"
     );
     assert!(fft_len.is_power_of_two(), "fft_len must be a power of two");
+    let table = bit_rev_table(fft_len);
+    assert!(
+        table.len().is_multiple_of(2),
+        "bit reversal table length must be even"
+    );
 
-    let (bit_rev_tab, bit_rev_factor) = bit_reversal_table(fft_len);
-    let fft_len_by2 = fft_len / 2;
-    let fft_len_by2p1 = fft_len_by2 + 1;
+    for i in (0..table.len()).step_by(2) {
+        let a = (table[i] as usize) >> 2;
+        let b = (table[i + 1] as usize) >> 2;
 
-    let mut j: usize = 0;
-    let mut bit_rev_index: usize = 0;
+        assert!(a + 1 < data.len(), "bit reversal index out of range: {}", a);
+        assert!(b + 1 < data.len(), "bit reversal index out of range: {}", b);
 
-    for i in (0..=(fft_len_by2 - 2)).step_by(2) {
-        if i < j {
-            data.swap(2 * i, 2 * j);
-            data.swap(2 * i + 1, 2 * j + 1);
-
-            data.swap(2 * (i + fft_len_by2p1), 2 * (j + fft_len_by2p1));
-            data.swap(2 * (i + fft_len_by2p1) + 1, 2 * (j + fft_len_by2p1) + 1);
-        }
-
-        data.swap(2 * (i + 1), 2 * (j + fft_len_by2));
-        data.swap(2 * (i + 1) + 1, 2 * (j + fft_len_by2) + 1);
-
-        j = bit_rev_tab[bit_rev_index] as usize;
-        bit_rev_index += bit_rev_factor as usize;
+        data.swap(a, b);
+        data.swap(a + 1, b + 1);
     }
 }
 
@@ -57,27 +53,20 @@ pub fn bitreversal_i32(data: &mut [i32], fft_len: usize) {
         "Q31 buffer length must be 2 * fft_len"
     );
     assert!(fft_len.is_power_of_two(), "fft_len must be a power of two");
+    let table = bit_rev_table(fft_len);
+    assert!(
+        table.len().is_multiple_of(2),
+        "bit reversal table length must be even"
+    );
 
-    let (bit_rev_tab, bit_rev_factor) = bit_reversal_table(fft_len);
-    let fft_len_by2 = fft_len / 2;
-    let fft_len_by2p1 = fft_len_by2 + 1;
+    for i in (0..table.len()).step_by(2) {
+        let a = (table[i] as usize) >> 2;
+        let b = (table[i + 1] as usize) >> 2;
 
-    let mut j: usize = 0;
-    let mut bit_rev_index: usize = 0;
+        assert!(a + 1 < data.len(), "bit reversal index out of range: {}", a);
+        assert!(b + 1 < data.len(), "bit reversal index out of range: {}", b);
 
-    for i in (0..=(fft_len_by2 - 2)).step_by(2) {
-        if i < j {
-            data.swap(2 * i, 2 * j);
-            data.swap(2 * i + 1, 2 * j + 1);
-
-            data.swap(2 * (i + fft_len_by2p1), 2 * (j + fft_len_by2p1));
-            data.swap(2 * (i + fft_len_by2p1) + 1, 2 * (j + fft_len_by2p1) + 1);
-        }
-
-        data.swap(2 * (i + 1), 2 * (j + fft_len_by2));
-        data.swap(2 * (i + 1) + 1, 2 * (j + fft_len_by2) + 1);
-
-        j = bit_rev_tab[bit_rev_index] as usize;
-        bit_rev_index += bit_rev_factor as usize;
+        data.swap(a, b);
+        data.swap(a + 1, b + 1);
     }
 }
