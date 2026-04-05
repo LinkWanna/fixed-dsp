@@ -1,3 +1,4 @@
+use fixed_dsp::common::tables::TWIDDLE_TABLE_4096_U16;
 use fixed_dsp::transform::{radix4_butterfly_i16, radix4_butterfly_inverse_i16};
 
 unsafe extern "C" {
@@ -42,7 +43,12 @@ fn radix4_butterfly_q15_difftest_against_cmsis() {
 
         let twiddle_modifier = get_twiddle_modifier(fft_len);
 
-        radix4_butterfly_i16(&mut rust_data, fft_len, twiddle_modifier);
+        radix4_butterfly_i16(
+            &mut rust_data,
+            fft_len,
+            &TWIDDLE_TABLE_4096_U16,
+            twiddle_modifier,
+        );
 
         unsafe {
             arm_radix4_butterfly_q15(
@@ -69,7 +75,12 @@ fn radix4_butterfly_inverse_q15_difftest_against_cmsis() {
 
         let twiddle_modifier = get_twiddle_modifier(fft_len);
 
-        radix4_butterfly_inverse_i16(&mut rust_data, fft_len, twiddle_modifier);
+        radix4_butterfly_inverse_i16(
+            &mut rust_data,
+            fft_len,
+            &TWIDDLE_TABLE_4096_U16,
+            twiddle_modifier,
+        );
 
         unsafe {
             arm_radix4_butterfly_inverse_q15(

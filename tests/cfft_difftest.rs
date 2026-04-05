@@ -1,5 +1,5 @@
 use fixed_dsp::common::tables::{TWIDDLE_TABLE_4096_U16, TWIDDLE_TABLE_4096_U32};
-use fixed_dsp::transform::{cfft_i16, cfft_i32};
+use fixed_dsp::transform::{CfftConfigI16, CfftConfigI32};
 
 unsafe extern "C" {
     static armBitRevIndexTable_fixed_16: u16;
@@ -188,7 +188,8 @@ fn cfft_q15_difftest_against_cmsis() {
                 let mut rust_data = sample_i16_buffer(fft_len);
                 let mut cmsis_data = rust_data.clone();
 
-                cfft_i16(&mut rust_data, fft_len, ifft_flag, bit_reverse_flag);
+                let cfg = CfftConfigI16::new(fft_len, ifft_flag, bit_reverse_flag);
+                cfg.cfft_i16(&mut rust_data);
                 cmsis_cfft_q15(&mut cmsis_data, fft_len, ifft_flag, bit_reverse_flag);
 
                 assert_eq!(
@@ -209,7 +210,8 @@ fn cfft_q31_difftest_against_cmsis() {
                 let mut rust_data = sample_i32_buffer(fft_len);
                 let mut cmsis_data = rust_data.clone();
 
-                cfft_i32(&mut rust_data, fft_len, ifft_flag, bit_reverse_flag);
+                let cfg = CfftConfigI32::new(fft_len, ifft_flag, bit_reverse_flag);
+                cfg.cfft_i32(&mut rust_data);
                 cmsis_cfft_q31(&mut cmsis_data, fft_len, ifft_flag, bit_reverse_flag);
 
                 assert_eq!(

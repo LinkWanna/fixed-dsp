@@ -1,5 +1,3 @@
-use crate::common::tables::{TWIDDLE_TABLE_4096_U16, TWIDDLE_TABLE_4096_U32};
-
 #[inline]
 fn sat_i16(v: i32) -> i16 {
     v.clamp(i16::MIN as i32, i16::MAX as i32) as i16
@@ -11,9 +9,12 @@ fn i32_mul(a: i32, b: i32) -> i32 {
 }
 
 /// Performs radix-4 DIF butterfly computation for Q15 fixed-point FFT.
-pub fn radix4_butterfly_i16(data: &mut [i16], fft_len: usize, mut twiddle_modifier: u16) {
-    let twiddles = &TWIDDLE_TABLE_4096_U16;
-
+pub fn radix4_butterfly_i16(
+    data: &mut [i16],
+    fft_len: usize,
+    twiddles: &[u16],
+    mut twiddle_modifier: u16,
+) {
     let mut n2 = fft_len;
     let mut n1;
     n2 >>= 2;
@@ -232,9 +233,12 @@ pub fn radix4_butterfly_i16(data: &mut [i16], fft_len: usize, mut twiddle_modifi
     }
 }
 
-pub fn radix4_butterfly_inverse_i16(data: &mut [i16], fft_len: usize, mut twiddle_modifier: u16) {
-    let twiddles = &TWIDDLE_TABLE_4096_U16;
-
+pub fn radix4_butterfly_inverse_i16(
+    data: &mut [i16],
+    fft_len: usize,
+    twiddles: &[u16],
+    mut twiddle_modifier: u16,
+) {
     let mut n2 = fft_len;
     let mut n1;
     n2 >>= 2;
@@ -451,9 +455,12 @@ pub fn radix4_butterfly_inverse_i16(data: &mut [i16], fft_len: usize, mut twiddl
     }
 }
 
-pub fn radix4_butterfly_i32(data: &mut [i32], fft_len: usize, mut twiddle_modifier: u16) {
-    let twiddles = &TWIDDLE_TABLE_4096_U32;
-
+pub fn radix4_butterfly_i32(
+    data: &mut [i32],
+    fft_len: usize,
+    twiddles: &[u32],
+    mut twiddle_modifier: u16,
+) {
     let mut n2 = fft_len;
     let mut n1;
     n2 >>= 2;
@@ -600,9 +607,12 @@ pub fn radix4_butterfly_i32(data: &mut [i32], fft_len: usize, mut twiddle_modifi
     }
 }
 
-pub fn radix4_butterfly_inverse_i32(data: &mut [i32], fft_len: usize, mut twiddle_modifier: u16) {
-    let twiddles = &TWIDDLE_TABLE_4096_U32;
-
+pub fn radix4_butterfly_inverse_i32(
+    data: &mut [i32],
+    fft_len: usize,
+    twiddles: &[u32],
+    mut twiddle_modifier: u16,
+) {
     let mut n2 = fft_len;
     let mut n1;
     n2 >>= 2;
