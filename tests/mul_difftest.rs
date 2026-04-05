@@ -81,15 +81,13 @@ fn mul_q31_difftest_against_cmsis() {
             let diff = (rust_result as i64 - cmsis_result as i64).abs();
             max_abs_diff = max_abs_diff.max(diff);
 
-            // Skip Some cases because CMSIS returns a different saturation result than our implementation,
-            // likely due to a different handling of overflow in this specific edge case.
-            if max_abs_diff > 1 {
-                assert_eq!(
-                    rust_result, cmsis_result,
-                    "Q31 multiplication mismatch for a={}, b={}: rust={}, cmsis={}",
-                    a, b, rust_result, cmsis_result
-                );
-            }
+            assert_eq!(
+                rust_result, cmsis_result,
+                "Q31 multiplication mismatch for a={}, b={}: rust={}, cmsis={}",
+                a, b, rust_result, cmsis_result
+            );
         }
     }
+    println!("Q31 multiplication - max_abs_diff: {}", max_abs_diff);
+    assert_eq!(max_abs_diff, 0, "Q31 results should be identical to CMSIS");
 }
