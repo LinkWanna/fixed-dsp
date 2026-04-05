@@ -2,7 +2,7 @@ use crate::common::tables::{REAL_COEF_A_U16, REAL_COEF_B_U16};
 
 use super::CfftI16;
 
-pub struct RfftConfigI16 {
+pub struct RfftI16 {
     pub fft_len_real: usize,
     pub ifft_flag: bool,
     pub bit_reverse_flag: bool,
@@ -10,7 +10,7 @@ pub struct RfftConfigI16 {
     pub im_table: &'static [u16],
 }
 
-impl RfftConfigI16 {
+impl RfftI16 {
     pub const fn new(fft_len_real: usize, ifft_flag: bool, bit_reverse_flag: bool) -> Self {
         assert!(
             fft_len_real.is_power_of_two(),
@@ -109,7 +109,7 @@ impl RfftConfigI16 {
         }
     }
 
-    pub fn rfft_i16(&self, input: &[i16], output: &mut [i16]) {
+    pub fn run(&self, input: &[i16], output: &mut [i16]) {
         let fft_len = self.fft_len_real >> 1;
         let modifier = (8192 / self.fft_len_real) as u32;
 

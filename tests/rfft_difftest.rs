@@ -1,5 +1,5 @@
 use fixed_dsp::common::tables::TWIDDLE_TABLE_4096_U16;
-use fixed_dsp::transform::RfftConfigI16;
+use fixed_dsp::transform::RfftI16;
 
 unsafe extern "C" {
     static armBitRevIndexTable_fixed_16: u16;
@@ -181,8 +181,8 @@ fn rfft_q15_forward_difftest_against_cmsis() {
             let mut rust_output = vec![0i16; fft_len_real * 2];
             let mut cmsis_output = vec![0i16; fft_len_real * 2];
 
-            let cfg = RfftConfigI16::new(fft_len_real, false, bit_reverse_flag);
-            cfg.rfft_i16(&input, &mut rust_output);
+            let cfg = RfftI16::new(fft_len_real, false, bit_reverse_flag);
+            cfg.run(&input, &mut rust_output);
             cmsis_rfft_q15_forward(&input, &mut cmsis_output, bit_reverse_flag);
 
             assert_eq!(
@@ -205,8 +205,8 @@ fn rfft_q15_inverse_difftest_against_cmsis() {
             let mut rust_output = vec![0i16; fft_len_real];
             let mut cmsis_output = vec![0i16; fft_len_real];
 
-            let cfg = RfftConfigI16::new(fft_len_real, true, bit_reverse_flag);
-            cfg.rfft_i16(&spectrum, &mut rust_output);
+            let cfg = RfftI16::new(fft_len_real, true, bit_reverse_flag);
+            cfg.run(&spectrum, &mut rust_output);
             cmsis_rfft_q15_inverse(&spectrum, &mut cmsis_output, bit_reverse_flag);
 
             assert_eq!(
