@@ -27,6 +27,8 @@ fn main() {
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/ComplexMathFunctions/arm_cmplx_mag_q31.c");
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/MatrixFunctions/arm_mat_add_q15.c");
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/MatrixFunctions/arm_mat_add_q31.c");
+    println!("cargo:rerun-if-changed=CMSIS-DSP/Source/MatrixFunctions/arm_mat_mult_q15.c");
+    println!("cargo:rerun-if-changed=CMSIS-DSP/Source/MatrixFunctions/arm_mat_mult_q31.c");
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/TransformFunctions/arm_bitreversal.c");
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/TransformFunctions/arm_bitreversal2.c");
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/TransformFunctions/arm_cfft_q15.c");
@@ -73,6 +75,8 @@ fn main() {
         .file("CMSIS-DSP/Source/ComplexMathFunctions/arm_cmplx_mag_q31.c")
         .file("CMSIS-DSP/Source/MatrixFunctions/arm_mat_add_q15.c")
         .file("CMSIS-DSP/Source/MatrixFunctions/arm_mat_add_q31.c")
+        .file("CMSIS-DSP/Source/MatrixFunctions/arm_mat_mult_q15.c")
+        .file("CMSIS-DSP/Source/MatrixFunctions/arm_mat_mult_q31.c")
         .file("CMSIS-DSP/Source/TransformFunctions/arm_bitreversal.c")
         .file("CMSIS-DSP/Source/TransformFunctions/arm_bitreversal2.c")
         .file("CMSIS-DSP/Source/TransformFunctions/arm_cfft_q15.c")
