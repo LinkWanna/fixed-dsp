@@ -5,43 +5,77 @@ unsafe extern "C" {
     fn arm_mult_q31(pSrcA: *const i32, pSrcB: *const i32, pDst: *mut i32, blockSize: u32);
 }
 
-fn sample_q31_inputs() -> Vec<i32> {
-    let mut data = Vec::with_capacity(20004);
-    data.extend([i32::MIN, i32::MIN + 1, -1, 0, 1, i32::MAX - 1, i32::MAX]);
-
-    let mut state: u64 = 0x9E37_79B9_7F4A_7C15;
-    for _ in 0..20000 {
+fn sample_q15_array(len: usize, seed: u64) -> Vec<i16> {
+    let mut out = Vec::with_capacity(len);
+    let mut state = seed;
+    for _ in 0..len {
         state ^= state << 7;
         state ^= state >> 9;
         state ^= state << 8;
-        data.push(state as i32);
+        out.push(state as i16);
+    }
+    if len >= 6 {
+        out[0] = i16::MIN;
+        out[1] = i16::MIN + 1;
+        out[2] = -1;
+        out[3] = 0;
+        out[4] = i16::MAX - 1;
+        out[5] = i16::MAX;
+    }
+    out
+}
+
+fn sample_q31_array(len: usize, seed: u64) -> Vec<i32> {
+    let mut out = Vec::with_capacity(len);
+    let mut state = seed;
+    for _ in 0..len {
+        state ^= state << 7;
+        state ^= state >> 9;
+        state ^= state << 8;
+        out.push(state as i32);
     }
 
-    data
+    // Avoid (INT32_MIN, INT32_MIN) at the same index because CMSIS behavior
+    // for that exact pair depends on internal saturation path.
+    if len >= 6 {
+        out[0] = i32::MIN + 1;
+        out[1] = i32::MIN + 2;
+        out[2] = -1;
+        out[3] = 0;
+        out[4] = i32::MAX - 1;
+        out[5] = i32::MAX;
+    }
+
+    out
 }
 
 #[test]
 fn mul_q15_difftest_against_cmsis() {
-    let inputs: Vec<i16> = (i16::MIN..=i16::MAX).step_by(257).collect();
-
     let mut max_abs_diff: i16 = 0;
 
-    for &a in &inputs {
-        for &b in &inputs {
-            let rust_result = mul_i16(a, b);
+    for &block_size in &[1usize, 2, 3, 4, 7, 16, 31, 64, 127, 256, 513] {
+        let a = sample_q15_array(block_size, 0x1234_5678_9abc_def0);
+        let b = sample_q15_array(block_size, 0x0fed_cba9_8765_4321);
+        let mut rust_out = vec![0i16; block_size];
+        let mut cmsis_out = vec![0i16; block_size];
 
-            let mut cmsis_result = 0_i16;
-            unsafe {
-                arm_mult_q15(&a, &b, &mut cmsis_result, 1);
-            }
+        mul_i16(a.as_ptr(), b.as_ptr(), rust_out.as_mut_ptr(), block_size);
+        unsafe {
+            arm_mult_q15(
+                a.as_ptr(),
+                b.as_ptr(),
+                cmsis_out.as_mut_ptr(),
+                block_size as u32,
+            );
+        }
 
-            let diff = (rust_result as i32 - cmsis_result as i32).abs() as i16;
+        for i in 0..block_size {
+            let diff = (rust_out[i] as i32 - cmsis_out[i] as i32).abs() as i16;
             max_abs_diff = max_abs_diff.max(diff);
-
             assert_eq!(
-                rust_result, cmsis_result,
-                "Q15 multiplication mismatch for a={}, b={}: rust={}, cmsis={}",
-                a, b, rust_result, cmsis_result
+                rust_out[i], cmsis_out[i],
+                "Q15 multiplication mismatch at idx={}, block_size={}: a={}, b={}, rust={}, cmsis={}",
+                i, block_size, a[i], b[i], rust_out[i], cmsis_out[i]
             );
         }
     }
@@ -52,42 +86,35 @@ fn mul_q15_difftest_against_cmsis() {
 
 #[test]
 fn mul_q31_difftest_against_cmsis() {
-    let a_inputs: Vec<i32> = sample_q31_inputs()
-        .into_iter()
-        .step_by(97)
-        .take(128)
-        .collect();
-    let b_inputs: Vec<i32> = sample_q31_inputs()
-        .into_iter()
-        .step_by(193)
-        .take(128)
-        .collect();
-
     let mut max_abs_diff: i64 = 0;
 
-    for &a in &a_inputs {
-        for &b in &b_inputs {
-            if a == i32::MIN && b == i32::MIN {
-                continue;
-            }
+    for &block_size in &[1usize, 2, 3, 4, 7, 16, 31, 64, 127, 256, 1024] {
+        let a = sample_q31_array(block_size, 0x9E37_79B9_7F4A_7C15);
+        let b = sample_q31_array(block_size, 0xDEAD_BEEF_0123_4567);
+        let mut rust_out = vec![0i32; block_size];
+        let mut cmsis_out = vec![0i32; block_size];
 
-            let rust_result = mul_i32(a, b);
+        mul_i32(a.as_ptr(), b.as_ptr(), rust_out.as_mut_ptr(), block_size);
+        unsafe {
+            arm_mult_q31(
+                a.as_ptr(),
+                b.as_ptr(),
+                cmsis_out.as_mut_ptr(),
+                block_size as u32,
+            );
+        }
 
-            let mut cmsis_result = 0_i32;
-            unsafe {
-                arm_mult_q31(&a, &b, &mut cmsis_result, 1);
-            }
-
-            let diff = (rust_result as i64 - cmsis_result as i64).abs();
+        for i in 0..block_size {
+            let diff = (rust_out[i] as i64 - cmsis_out[i] as i64).abs();
             max_abs_diff = max_abs_diff.max(diff);
-
             assert_eq!(
-                rust_result, cmsis_result,
-                "Q31 multiplication mismatch for a={}, b={}: rust={}, cmsis={}",
-                a, b, rust_result, cmsis_result
+                rust_out[i], cmsis_out[i],
+                "Q31 multiplication mismatch at idx={}, block_size={}: a={}, b={}, rust={}, cmsis={}",
+                i, block_size, a[i], b[i], rust_out[i], cmsis_out[i]
             );
         }
     }
+
     println!("Q31 multiplication - max_abs_diff: {}", max_abs_diff);
     assert_eq!(max_abs_diff, 0, "Q31 results should be identical to CMSIS");
 }

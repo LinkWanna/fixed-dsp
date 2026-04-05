@@ -1,26 +1,21 @@
-/// Multiply two Q15 fixed-point values and saturate result to Q15 range
-///
-/// a and b are in Q15 format (1.15 fixed-point), range [-32768, 32767] representing [-1.0, ~0.9999]
-/// The multiplication produces a 2.30 format result, which must be rescaled back to Q15
-/// by right-shifting 15 bits and saturating to the valid Q15 range.
-///
-/// Formula: result = saturate((a * b) >> 15)
-pub fn mul_i16(a: i16, b: i16) -> i16 {
-    let mul = (a as i32) * (b as i32);
-    let result = mul >> 15;
-
-    // Saturate to i16 range: [-2^15, 2^15-1] =  [-32768, 32767]
-    result.clamp(i16::MIN as i32, i16::MAX as i32) as i16
+pub fn mul_i16(a: *const i16, b: *const i16, output: *mut i16, size: usize) {
+    for i in 0..size {
+        unsafe {
+            let a_val = *a.add(i) as i32;
+            let b_val = *b.add(i) as i32;
+            let mul_val = (a_val * b_val) >> 15;
+            *output.add(i) = mul_val.clamp(i16::MIN as i32, i16::MAX as i32) as i16; // Saturate to i16 range
+        }
+    }
 }
 
-/// Multiply two Q31 fixed-point values using CMSIS `arm_mult_q31` scalar semantics.
-///
-/// CMSIS computes:
-/// `out = ((a * b) >> 32); out = SSAT(out, 31); result = out << 1`.
-pub fn mul_i32(a: i32, b: i32) -> i32 {
-    let mul = (a as i64) * (b as i64);
-    let out = (mul >> 32) as i32;
-    let sat = out.clamp(-(1 << 30), (1 << 30) - 1);
-
-    sat << 1
+pub fn mul_i32(a: *const i32, b: *const i32, output: *mut i32, size: usize) {
+    for i in 0..size {
+        unsafe {
+            let a_val = *a.add(i) as i64;
+            let b_val = *b.add(i) as i64;
+            let mul_val = (a_val * b_val) >> 32;
+            *output.add(i) = (mul_val.clamp(i32::MIN as i64, i32::MAX as i64) << 1) as i32; // Saturate to i32 range
+        }
+    }
 }
