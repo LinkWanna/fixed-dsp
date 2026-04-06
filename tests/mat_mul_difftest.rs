@@ -1,4 +1,4 @@
-use fixed_dsp::matrix::{mat_mul_i16, mat_mul_i32, Matrix};
+use fixed_dsp::matrix::{Matrix, mat_mul_i16, mat_mul_i32};
 
 #[repr(C)]
 #[allow(non_snake_case)]
@@ -61,7 +61,13 @@ fn sample_i32_data(len: usize, seed: i32) -> Vec<i32> {
 
 #[test]
 fn mat_mul_q15_difftest_against_cmsis() {
-    let cases = [(1usize, 1usize, 1usize), (1, 3, 2), (2, 3, 4), (3, 4, 2), (4, 4, 4)];
+    let cases = [
+        (1usize, 1usize, 1usize),
+        (1, 3, 2),
+        (2, 3, 4),
+        (3, 4, 2),
+        (4, 4, 4),
+    ];
 
     for &(rows_a, cols_a, cols_b) in &cases {
         let len_a = rows_a * cols_a;
@@ -110,7 +116,13 @@ fn mat_mul_q15_difftest_against_cmsis() {
 
 #[test]
 fn mat_mul_q31_difftest_against_cmsis() {
-    let cases = [(1usize, 1usize, 1usize), (1, 3, 2), (2, 3, 4), (3, 4, 2), (4, 4, 4)];
+    let cases = [
+        (1usize, 1usize, 1usize),
+        (1, 3, 2),
+        (2, 3, 4),
+        (3, 4, 2),
+        (4, 4, 4),
+    ];
 
     for &(rows_a, cols_a, cols_b) in &cases {
         let len_a = rows_a * cols_a;

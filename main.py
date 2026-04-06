@@ -21,7 +21,7 @@ def main():
     window = sw.hamming(256, sym=False)
 
     rust_code = render_mfcc_template(
-        ty="i16",
+        ty="i32",
         window=window,
         dct_matrix=dct_matrix,
         filt_pos=filt_pos,

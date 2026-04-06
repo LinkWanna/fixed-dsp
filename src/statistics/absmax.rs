@@ -1,13 +1,3 @@
-#[inline]
-fn abs_sat_i16(x: i16) -> i16 {
-    if x == i16::MIN { i16::MAX } else { x.abs() }
-}
-
-#[inline]
-fn abs_sat_i32(x: i32) -> i32 {
-    if x == i32::MIN { i32::MAX } else { x.abs() }
-}
-
 /// Maximum absolute value and its index for a Q15 slice prefix.
 ///
 /// Only the first `size` samples are processed, matching CMSIS API style.
@@ -15,11 +5,11 @@ fn abs_sat_i32(x: i32) -> i32 {
 pub fn absmax_i16(input: &[i16], size: usize) -> (i16, usize) {
     assert!(size <= input.len(), "size must be <= input length");
 
-    let mut out = abs_sat_i16(input[0]);
+    let mut out = input[0].saturating_abs();
     let mut out_index = 0usize;
 
     for (index, &value) in input[..size].iter().enumerate().skip(1) {
-        let candidate = abs_sat_i16(value);
+        let candidate = value.saturating_abs();
         if candidate > out {
             out = candidate;
             out_index = index;
@@ -36,11 +26,11 @@ pub fn absmax_i16(input: &[i16], size: usize) -> (i16, usize) {
 pub fn absmax_i32(input: &[i32], size: usize) -> (i32, usize) {
     assert!(size <= input.len(), "size must be <= input length");
 
-    let mut out = abs_sat_i32(input[0]);
+    let mut out = input[0].saturating_abs();
     let mut out_index = 0usize;
 
     for (index, &value) in input[..size].iter().enumerate().skip(1) {
-        let candidate = abs_sat_i32(value);
+        let candidate = value.saturating_abs();
         if candidate > out {
             out = candidate;
             out_index = index;

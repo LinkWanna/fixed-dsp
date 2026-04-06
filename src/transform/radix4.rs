@@ -1,9 +1,5 @@
 use crate::sat_i16;
 
-// #[inline]
-// fn i32_mul(a: i32, b: i32) -> i32 {
-//     (((a as i64 * b as i64) + 0x8000_0000) >> 32) as i32
-// }
 #[inline]
 fn i32_mul(a: i32, b: i32) -> i32 {
     ((a as i64 * b as i64) >> 32) as i32
@@ -66,7 +62,7 @@ pub fn radix4_butterfly_i16(
         let si3 = twiddles[6 * ic + 1] as i16;
 
         let out1_i1 = (((co2 as i32) * (r0 as i32) + (si2 as i32) * (r1 as i32)) >> 16) as i16;
-        let out2_i1 = (((-(si2 as i32)) * (r0 as i32) + (co2 as i32) * (r1 as i32)) >> 16) as i16;
+        let out2_i1 = (((co2 as i32) * (r1 as i32) - (si2 as i32) * (r0 as i32)) >> 16) as i16;
         data[i1 * 2] = out1_i1;
         data[i1 * 2 + 1] = out2_i1;
 
@@ -78,15 +74,13 @@ pub fn radix4_butterfly_i16(
         let s0_b = sat_i16(s0 as i32 + td1 as i32);
         let s1_b = sat_i16(s1 as i32 - td0 as i32);
 
-        let out1_i2 = (((si1 as i32) * (s1_b as i32) + (co1 as i32) * (s0_b as i32)) >> 16) as i16;
-        let out2_i2 =
-            (((-(si1 as i32)) * (s0_b as i32) + (co1 as i32) * (s1_b as i32)) >> 16) as i16;
+        let out1_i2 = (((co1 as i32) * (s0_b as i32) + (si1 as i32) * (s1_b as i32)) >> 16) as i16;
+        let out2_i2 = (((co1 as i32) * (s1_b as i32) - (si1 as i32) * (s0_b as i32)) >> 16) as i16;
         data[i2 * 2] = out1_i2;
         data[i2 * 2 + 1] = out2_i2;
 
-        let out1_i3 = (((si3 as i32) * (r1_b as i32) + (co3 as i32) * (r0_b as i32)) >> 16) as i16;
-        let out2_i3 =
-            (((-(si3 as i32)) * (r0_b as i32) + (co3 as i32) * (r1_b as i32)) >> 16) as i16;
+        let out1_i3 = (((co3 as i32) * (r0_b as i32) + (si3 as i32) * (r1_b as i32)) >> 16) as i16;
+        let out2_i3 = (((co3 as i32) * (r1_b as i32) - (si3 as i32) * (r0_b as i32)) >> 16) as i16;
         data[i3 * 2] = out1_i3;
         data[i3 * 2 + 1] = out2_i3;
 
@@ -151,7 +145,7 @@ pub fn radix4_butterfly_i16(
                 let out1_re =
                     (((co2 as i32) * (r0 as i32) + (si2 as i32) * (r1 as i32)) >> 16) as i16;
                 let out1_im =
-                    (((-(si2 as i32)) * (r0 as i32) + (co2 as i32) * (r1 as i32)) >> 16) as i16;
+                    (((co2 as i32) * (r1 as i32) - (si2 as i32) * (r0 as i32)) >> 16) as i16;
                 data[i1 * 2] = out1_re;
                 data[i1 * 2 + 1] = out1_im;
 
@@ -166,14 +160,14 @@ pub fn radix4_butterfly_i16(
                 let out2_re =
                     (((co1 as i32) * (s0_b as i32) + (si1 as i32) * (s1_b as i32)) >> 16) as i16;
                 let out2_im =
-                    (((-(si1 as i32)) * (s0_b as i32) + (co1 as i32) * (s1_b as i32)) >> 16) as i16;
+                    (((co1 as i32) * (s1_b as i32) - (si1 as i32) * (s0_b as i32)) >> 16) as i16;
                 data[i2 * 2] = out2_re;
                 data[i2 * 2 + 1] = out2_im;
 
                 let out3_re =
                     (((co3 as i32) * (r0_b as i32) + (si3 as i32) * (r1_b as i32)) >> 16) as i16;
                 let out3_im =
-                    (((-(si3 as i32)) * (r0_b as i32) + (co3 as i32) * (r1_b as i32)) >> 16) as i16;
+                    (((co3 as i32) * (r1_b as i32) - (si3 as i32) * (r0_b as i32)) >> 16) as i16;
                 data[i3 * 2] = out3_re;
                 data[i3 * 2 + 1] = out3_im;
 
@@ -290,7 +284,7 @@ pub fn radix4_butterfly_inverse_i16(
         let si3 = twiddles[6 * ic + 1] as i16;
 
         let out1_i1 = (((co2 as i32) * (r0 as i32) - (si2 as i32) * (r1 as i32)) >> 16) as i16;
-        let out2_i1 = (((si2 as i32) * (r0 as i32) + (co2 as i32) * (r1 as i32)) >> 16) as i16;
+        let out2_i1 = (((co2 as i32) * (r1 as i32) + (si2 as i32) * (r0 as i32)) >> 16) as i16;
         data[i1 * 2] = out1_i1;
         data[i1 * 2 + 1] = out2_i1;
 
@@ -303,12 +297,12 @@ pub fn radix4_butterfly_inverse_i16(
         let s1_b = sat_i16(s1 as i32 + td0 as i32);
 
         let out1_i2 = (((co1 as i32) * (s0_b as i32) - (si1 as i32) * (s1_b as i32)) >> 16) as i16;
-        let out2_i2 = (((si1 as i32) * (s0_b as i32) + (co1 as i32) * (s1_b as i32)) >> 16) as i16;
+        let out2_i2 = (((co1 as i32) * (s1_b as i32) + (si1 as i32) * (s0_b as i32)) >> 16) as i16;
         data[i2 * 2] = out1_i2;
         data[i2 * 2 + 1] = out2_i2;
 
         let out1_i3 = (((co3 as i32) * (r0_b as i32) - (si3 as i32) * (r1_b as i32)) >> 16) as i16;
-        let out2_i3 = (((si3 as i32) * (r0_b as i32) + (co3 as i32) * (r1_b as i32)) >> 16) as i16;
+        let out2_i3 = (((co3 as i32) * (r1_b as i32) + (si3 as i32) * (r0_b as i32)) >> 16) as i16;
         data[i3 * 2] = out1_i3;
         data[i3 * 2 + 1] = out2_i3;
 
@@ -373,7 +367,7 @@ pub fn radix4_butterfly_inverse_i16(
                 let out1_re =
                     (((co2 as i32) * (r0 as i32) - (si2 as i32) * (r1 as i32)) >> 16) as i16;
                 let out1_im =
-                    (((si2 as i32) * (r0 as i32) + (co2 as i32) * (r1 as i32)) >> 16) as i16;
+                    (((co2 as i32) * (r1 as i32) + (si2 as i32) * (r0 as i32)) >> 16) as i16;
                 data[i1 * 2] = out1_re;
                 data[i1 * 2 + 1] = out1_im;
 
@@ -388,14 +382,14 @@ pub fn radix4_butterfly_inverse_i16(
                 let out2_re =
                     (((co1 as i32) * (s0_b as i32) - (si1 as i32) * (s1_b as i32)) >> 16) as i16;
                 let out2_im =
-                    (((si1 as i32) * (s0_b as i32) + (co1 as i32) * (s1_b as i32)) >> 16) as i16;
+                    (((co1 as i32) * (s1_b as i32) + (si1 as i32) * (s0_b as i32)) >> 16) as i16;
                 data[i2 * 2] = out2_re;
                 data[i2 * 2 + 1] = out2_im;
 
                 let out3_re =
                     (((co3 as i32) * (r0_b as i32) - (si3 as i32) * (r1_b as i32)) >> 16) as i16;
                 let out3_im =
-                    (((si3 as i32) * (r0_b as i32) + (co3 as i32) * (r1_b as i32)) >> 16) as i16;
+                    (((co3 as i32) * (r1_b as i32) + (si3 as i32) * (r0_b as i32)) >> 16) as i16;
                 data[i3 * 2] = out3_re;
                 data[i3 * 2 + 1] = out3_im;
 

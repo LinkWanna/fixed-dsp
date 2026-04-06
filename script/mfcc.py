@@ -1,4 +1,5 @@
 import numpy as np
+
 from script.utils import format_array
 
 template = """
@@ -10,11 +11,11 @@ pub const MCFF_DCT_{TY}: [{ty}; {dct_len}] = [
     {dct}
 ];
 
-pub const MEL_FILTER_POS_{TY}: [{ty}; {n_mels}] = [
+pub const MEL_FILTER_POS_U16: [u16; {n_mels}] = [
     {filter_pos}
 ];
 
-pub const MEL_FILTER_LEN_{TY}: [{ty}; {n_mels}] = [
+pub const MEL_FILTER_LEN_U16: [u16; {n_mels}] = [
     {filter_len_array}
 ];
 
