@@ -11,11 +11,11 @@ fn i32_mul(a: i32, b: i32) -> i32 {
 /// Performs radix-4 DIF butterfly computation for Q15 fixed-point FFT.
 pub fn radix4_butterfly_i16(
     data: &mut [i16],
-    fft_len: usize,
+    n_fft: usize,
     twiddles: &[u16],
     mut twiddle_modifier: u16,
 ) {
-    let mut n2 = fft_len;
+    let mut n2 = n_fft;
     let mut n1;
     n2 >>= 2;
 
@@ -96,7 +96,7 @@ pub fn radix4_butterfly_i16(
 
     // Middle stages
     twiddle_modifier <<= 2;
-    let mut k = fft_len / 4;
+    let mut k = n_fft / 4;
     while k > 4 {
         n1 = n2;
         n2 >>= 2;
@@ -112,7 +112,7 @@ pub fn radix4_butterfly_i16(
             ic += twiddle_modifier as usize;
 
             let mut i0 = j;
-            while i0 < fft_len {
+            while i0 < n_fft {
                 let i1 = i0 + n2;
                 let i2 = i1 + n2;
                 let i3 = i2 + n2;
@@ -189,7 +189,7 @@ pub fn radix4_butterfly_i16(
     n2 >>= 2;
 
     let mut i0 = 0usize;
-    while i0 <= fft_len - n1 {
+    while i0 <= n_fft - n1 {
         let i1 = i0 + n2;
         let i2 = i1 + n2;
         let i3 = i2 + n2;
@@ -235,11 +235,11 @@ pub fn radix4_butterfly_i16(
 
 pub fn radix4_butterfly_inverse_i16(
     data: &mut [i16],
-    fft_len: usize,
+    n_fft: usize,
     twiddles: &[u16],
     mut twiddle_modifier: u16,
 ) {
-    let mut n2 = fft_len;
+    let mut n2 = n_fft;
     let mut n1;
     n2 >>= 2;
 
@@ -318,7 +318,7 @@ pub fn radix4_butterfly_inverse_i16(
 
     // Middle stages
     twiddle_modifier <<= 2;
-    let mut k = fft_len / 4;
+    let mut k = n_fft / 4;
     while k > 4 {
         n1 = n2;
         n2 >>= 2;
@@ -334,7 +334,7 @@ pub fn radix4_butterfly_inverse_i16(
             ic += twiddle_modifier as usize;
 
             let mut i0 = j;
-            while i0 < fft_len {
+            while i0 < n_fft {
                 let i1 = i0 + n2;
                 let i2 = i1 + n2;
                 let i3 = i2 + n2;
@@ -411,7 +411,7 @@ pub fn radix4_butterfly_inverse_i16(
     n2 >>= 2;
 
     let mut i0 = 0usize;
-    while i0 <= fft_len - n1 {
+    while i0 <= n_fft - n1 {
         let i1 = i0 + n2;
         let i2 = i1 + n2;
         let i3 = i2 + n2;
@@ -457,11 +457,11 @@ pub fn radix4_butterfly_inverse_i16(
 
 pub fn radix4_butterfly_i32(
     data: &mut [i32],
-    fft_len: usize,
+    n_fft: usize,
     twiddles: &[u32],
     mut twiddle_modifier: u16,
 ) {
-    let mut n2 = fft_len;
+    let mut n2 = n_fft;
     let mut n1;
     n2 >>= 2;
 
@@ -519,7 +519,7 @@ pub fn radix4_butterfly_i32(
 
     twiddle_modifier <<= 2;
 
-    let mut k = fft_len / 4;
+    let mut k = n_fft / 4;
     while k > 4 {
         n1 = n2;
         n2 >>= 2;
@@ -538,7 +538,7 @@ pub fn radix4_butterfly_i32(
             ia1 += twiddle_modifier as usize;
 
             let mut i0 = j;
-            while i0 < fft_len {
+            while i0 < n_fft {
                 let i1 = i0 + n2;
                 let i2 = i1 + n2;
                 let i3 = i2 + n2;
@@ -582,7 +582,7 @@ pub fn radix4_butterfly_i32(
     }
 
     let mut ptr = 0usize;
-    let mut j = fft_len >> 2;
+    let mut j = n_fft >> 2;
     while j > 0 {
         let xa = data[ptr];
         let ya = data[ptr + 1];
@@ -609,11 +609,11 @@ pub fn radix4_butterfly_i32(
 
 pub fn radix4_butterfly_inverse_i32(
     data: &mut [i32],
-    fft_len: usize,
+    n_fft: usize,
     twiddles: &[u32],
     mut twiddle_modifier: u16,
 ) {
-    let mut n2 = fft_len;
+    let mut n2 = n_fft;
     let mut n1;
     n2 >>= 2;
 
@@ -671,7 +671,7 @@ pub fn radix4_butterfly_inverse_i32(
 
     twiddle_modifier <<= 2;
 
-    let mut k = fft_len / 4;
+    let mut k = n_fft / 4;
     while k > 4 {
         n1 = n2;
         n2 >>= 2;
@@ -690,7 +690,7 @@ pub fn radix4_butterfly_inverse_i32(
             ia1 += twiddle_modifier as usize;
 
             let mut i0 = j;
-            while i0 < fft_len {
+            while i0 < n_fft {
                 let i1 = i0 + n2;
                 let i2 = i1 + n2;
                 let i3 = i2 + n2;
@@ -734,7 +734,7 @@ pub fn radix4_butterfly_inverse_i32(
     }
 
     let mut ptr = 0usize;
-    let mut j = fft_len >> 2;
+    let mut j = n_fft >> 2;
     while j > 0 {
         let xa = data[ptr];
         let ya = data[ptr + 1];

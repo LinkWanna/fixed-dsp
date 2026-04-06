@@ -26,7 +26,7 @@ fn i32_mul(a: i32, b: i32) -> i32 {
 }
 
 pub struct CfftI16 {
-    pub fft_len: usize,
+    pub n_fft: usize,
     pub ifft_flag: bool,
     pub bit_reverse_flag: bool,
     pub twiddle: &'static [u16],
@@ -34,14 +34,11 @@ pub struct CfftI16 {
 }
 
 impl CfftI16 {
-    pub const fn new(fft_len: usize, ifft_flag: bool, bit_reverse_flag: bool) -> Self {
-        assert!(fft_len.is_power_of_two(), "fft_len must be a power of two");
-        assert!(
-            16 <= fft_len && fft_len <= 4096,
-            "fft_len must be in [16, 4096]",
-        );
+    pub const fn new(n_fft: usize, ifft_flag: bool, bit_reverse_flag: bool) -> Self {
+        assert!(n_fft.is_power_of_two(), "n_fft must be a power of two");
+        assert!(16 <= n_fft && n_fft <= 4096, "n_fft must be in [16, 4096]",);
 
-        let twiddle: &'static [u16] = match fft_len {
+        let twiddle: &'static [u16] = match n_fft {
             16 => &TWIDDLE_TABLE_16_U16,
             32 => &TWIDDLE_TABLE_32_U16,
             64 => &TWIDDLE_TABLE_64_U16,
@@ -54,7 +51,7 @@ impl CfftI16 {
             _ => unreachable!(),
         };
 
-        let bit_rev_table: &'static [u16] = match fft_len {
+        let bit_rev_table: &'static [u16] = match n_fft {
             16 => &BIT_REV_TABLE_16,
             32 => &BIT_REV_TABLE_32,
             64 => &BIT_REV_TABLE_64,
@@ -68,7 +65,7 @@ impl CfftI16 {
         };
 
         Self {
-            fft_len,
+            n_fft,
             ifft_flag,
             bit_reverse_flag,
             twiddle,
@@ -76,8 +73,8 @@ impl CfftI16 {
         }
     }
 
-    fn radix4by2_butterfly_i16(data: &mut [i16], fft_len: usize, twiddle: &[u16], modifier: u16) {
-        let n2 = fft_len >> 1;
+    fn radix4by2_butterfly_i16(data: &mut [i16], n_fft: usize, twiddle: &[u16], modifier: u16) {
+        let n2 = n_fft >> 1;
 
         for i in 0..n2 {
             let cos_val = twiddle[2 * i] as i16;
@@ -103,8 +100,8 @@ impl CfftI16 {
             data[2 * l + 1] = out_im;
         }
 
-        radix4_butterfly_i16(&mut data[..fft_len], n2, twiddle, modifier);
-        radix4_butterfly_i16(&mut data[fft_len..], n2, twiddle, modifier);
+        radix4_butterfly_i16(&mut data[..n_fft], n2, twiddle, modifier);
+        radix4_butterfly_i16(&mut data[n_fft..], n2, twiddle, modifier);
 
         for i in 0..n2 {
             data[4 * i] = data[4 * i].wrapping_shl(1);
@@ -116,11 +113,11 @@ impl CfftI16 {
 
     fn radix4by2_butterfly_inverse_i16(
         data: &mut [i16],
-        fft_len: usize,
+        n_fft: usize,
         twiddle: &[u16],
         modifier: u16,
     ) {
-        let n2 = fft_len >> 1;
+        let n2 = n_fft >> 1;
 
         for i in 0..n2 {
             let cos_val = twiddle[2 * i] as i16;
@@ -146,8 +143,8 @@ impl CfftI16 {
             data[2 * l + 1] = out_im;
         }
 
-        radix4_butterfly_inverse_i16(&mut data[..fft_len], n2, twiddle, modifier);
-        radix4_butterfly_inverse_i16(&mut data[fft_len..], n2, twiddle, modifier);
+        radix4_butterfly_inverse_i16(&mut data[..n_fft], n2, twiddle, modifier);
+        radix4_butterfly_inverse_i16(&mut data[n_fft..], n2, twiddle, modifier);
 
         for i in 0..n2 {
             data[4 * i] = data[4 * i].wrapping_shl(1);
@@ -161,34 +158,34 @@ impl CfftI16 {
     pub fn run(self, data: &mut [i16]) {
         assert_eq!(
             data.len(),
-            self.fft_len * 2,
-            "Q15 buffer length must be 2 * fft_len"
+            self.n_fft * 2,
+            "Q15 buffer length must be 2 * n_fft"
         );
 
         let radix4_modifier = 1u16;
         let radix4by2_modifier = 2u16;
 
         if self.ifft_flag {
-            match self.fft_len {
+            match self.n_fft {
                 16 | 64 | 256 | 1024 | 4096 => {
-                    radix4_butterfly_inverse_i16(data, self.fft_len, self.twiddle, radix4_modifier)
+                    radix4_butterfly_inverse_i16(data, self.n_fft, self.twiddle, radix4_modifier)
                 }
                 32 | 128 | 512 | 2048 => Self::radix4by2_butterfly_inverse_i16(
                     data,
-                    self.fft_len,
+                    self.n_fft,
                     self.twiddle,
                     radix4by2_modifier,
                 ),
                 _ => unreachable!(),
             }
         } else {
-            match self.fft_len {
+            match self.n_fft {
                 16 | 64 | 256 | 1024 | 4096 => {
-                    radix4_butterfly_i16(data, self.fft_len, self.twiddle, radix4_modifier)
+                    radix4_butterfly_i16(data, self.n_fft, self.twiddle, radix4_modifier)
                 }
                 32 | 128 | 512 | 2048 => Self::radix4by2_butterfly_i16(
                     data,
-                    self.fft_len,
+                    self.n_fft,
                     self.twiddle,
                     radix4by2_modifier,
                 ),
@@ -203,7 +200,7 @@ impl CfftI16 {
 }
 
 pub struct CfftI32 {
-    pub fft_len: usize,
+    pub n_fft: usize,
     pub ifft_flag: bool,
     pub bit_reverse_flag: bool,
     pub twiddle: &'static [u32],
@@ -211,14 +208,11 @@ pub struct CfftI32 {
 }
 
 impl CfftI32 {
-    pub const fn new(fft_len: usize, ifft_flag: bool, bit_reverse_flag: bool) -> Self {
-        assert!(fft_len.is_power_of_two(), "fft_len must be a power of two");
-        assert!(
-            16 <= fft_len && fft_len <= 4096,
-            "fft_len must be in [16, 4096]",
-        );
+    pub const fn new(n_fft: usize, ifft_flag: bool, bit_reverse_flag: bool) -> Self {
+        assert!(n_fft.is_power_of_two(), "n_fft must be a power of two");
+        assert!(16 <= n_fft && n_fft <= 4096, "n_fft must be in [16, 4096]",);
 
-        let twiddle: &'static [u32] = match fft_len {
+        let twiddle: &'static [u32] = match n_fft {
             16 => &TWIDDLE_TABLE_16_U32,
             32 => &TWIDDLE_TABLE_32_U32,
             64 => &TWIDDLE_TABLE_64_U32,
@@ -231,7 +225,7 @@ impl CfftI32 {
             _ => unreachable!(),
         };
 
-        let bit_rev_table: &'static [u16] = match fft_len {
+        let bit_rev_table: &'static [u16] = match n_fft {
             16 => &BIT_REV_TABLE_16,
             32 => &BIT_REV_TABLE_32,
             64 => &BIT_REV_TABLE_64,
@@ -245,7 +239,7 @@ impl CfftI32 {
         };
 
         Self {
-            fft_len,
+            n_fft,
             ifft_flag,
             bit_reverse_flag,
             twiddle,
@@ -255,11 +249,11 @@ impl CfftI32 {
 
     fn radix4by2_butterfly_i32(
         data: &mut [i32],
-        fft_len: usize,
+        n_fft: usize,
         twiddle: &[u32],
         radix4_modifier: u16,
     ) {
-        let n2 = fft_len >> 1;
+        let n2 = n_fft >> 1;
 
         for i in 0..n2 {
             let cos_val = twiddle[2 * i] as i32;
@@ -282,8 +276,8 @@ impl CfftI32 {
             data[2 * l + 1] = out_im.wrapping_shl(1);
         }
 
-        radix4_butterfly_i32(&mut data[..fft_len], n2, twiddle, radix4_modifier);
-        radix4_butterfly_i32(&mut data[fft_len..], n2, twiddle, radix4_modifier);
+        radix4_butterfly_i32(&mut data[..n_fft], n2, twiddle, radix4_modifier);
+        radix4_butterfly_i32(&mut data[n_fft..], n2, twiddle, radix4_modifier);
 
         for i in 0..n2 {
             data[4 * i] = data[4 * i].wrapping_shl(1);
@@ -295,11 +289,11 @@ impl CfftI32 {
 
     fn radix4by2_butterfly_inverse_i32(
         data: &mut [i32],
-        fft_len: usize,
+        n_fft: usize,
         twiddle: &[u32],
         radix4_modifier: u16,
     ) {
-        let n2 = fft_len >> 1;
+        let n2 = n_fft >> 1;
 
         for i in 0..n2 {
             let cos_val = twiddle[2 * i] as i32;
@@ -322,8 +316,8 @@ impl CfftI32 {
             data[2 * l + 1] = out_im.wrapping_shl(1);
         }
 
-        radix4_butterfly_inverse_i32(&mut data[..fft_len], n2, twiddle, radix4_modifier);
-        radix4_butterfly_inverse_i32(&mut data[fft_len..], n2, twiddle, radix4_modifier);
+        radix4_butterfly_inverse_i32(&mut data[..n_fft], n2, twiddle, radix4_modifier);
+        radix4_butterfly_inverse_i32(&mut data[n_fft..], n2, twiddle, radix4_modifier);
 
         for i in 0..n2 {
             data[4 * i] = data[4 * i].wrapping_shl(1);
@@ -337,34 +331,34 @@ impl CfftI32 {
     pub fn run(&self, data: &mut [i32]) {
         assert_eq!(
             data.len(),
-            self.fft_len * 2,
-            "Q31 buffer length must be 2 * fft_len"
+            self.n_fft * 2,
+            "Q31 buffer length must be 2 * n_fft"
         );
 
         let radix4_modifier = 1u16;
         let radix4by2_modifier = 2u16;
 
         if self.ifft_flag {
-            match self.fft_len {
+            match self.n_fft {
                 16 | 64 | 256 | 1024 | 4096 => {
-                    radix4_butterfly_inverse_i32(data, self.fft_len, self.twiddle, radix4_modifier)
+                    radix4_butterfly_inverse_i32(data, self.n_fft, self.twiddle, radix4_modifier)
                 }
                 32 | 128 | 512 | 2048 => Self::radix4by2_butterfly_inverse_i32(
                     data,
-                    self.fft_len,
+                    self.n_fft,
                     self.twiddle,
                     radix4by2_modifier,
                 ),
                 _ => unreachable!(),
             }
         } else {
-            match self.fft_len {
+            match self.n_fft {
                 16 | 64 | 256 | 1024 | 4096 => {
-                    radix4_butterfly_i32(data, self.fft_len, self.twiddle, radix4_modifier)
+                    radix4_butterfly_i32(data, self.n_fft, self.twiddle, radix4_modifier)
                 }
                 32 | 128 | 512 | 2048 => Self::radix4by2_butterfly_i32(
                     data,
-                    self.fft_len,
+                    self.n_fft,
                     self.twiddle,
                     radix4by2_modifier,
                 ),
