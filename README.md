@@ -2,14 +2,14 @@
 
 `fixed-dsp` is a Rust fixed-point DSP library focused on Q15/Q31 algorithms with behavior close to CMSIS-DSP. It also supports differential testing (difftest) against CMSIS C reference implementations.
 
-The crate name is `fixed-dsp`, and the library entry point is [src/lib.rs](src/lib.rs).
+[中文](https://github.com/LinkWanna/fixed-dsp/blob/main/README_zh.md)
 
 ## Highlights
 
 - `#![no_std]` friendly for embedded targets
 - Q15/Q31 implementations (`i16` / `i32`)
 - Modular structure: basic ops, matrix, statistics, complex math, transforms, MFCC
-- Optional `difftest` feature: when enabled, [build.rs](build.rs) compiles selected CMSIS-DSP C sources for differential validation
+- Optional `difftest` feature: when enabled, compiles selected CMSIS-DSP C sources for differential validation
 
 ## Implemented Modules
 
@@ -54,13 +54,6 @@ Located in [src/transform](src/transform).
 - Radix-4 butterfly: forward/inverse Q15/Q31 kernels
 - MFCC: `MfccI16` / `MfccI32`
 
-### Common
-
-Located in [src/common](src/common).
-
-- Error types: `Error`, `Result`
-- Lookup tables: sin, twiddle, bit-reversal, real-FFT coefficients
-
 ## Quick Start
 
 ### 1. Add dependency
@@ -69,7 +62,7 @@ For local workspace development, use a path dependency:
 
 ```toml
 [dependencies]
-fixed-dsp = { path = "../fixed-dsp" }
+fixed-dsp = "0.2"
 ```
 
 ### 2. Basic example (Q15 sine)
@@ -103,20 +96,6 @@ fn main() {
 
 ## Build and Test
 
-### Regular build
-
-```bash
-cargo check
-```
-
-### Tests that do not require CMSIS C reference objects
-
-```bash
-cargo test --lib
-```
-
-### Run difftests against CMSIS-DSP
-
 With the `difftest` feature enabled, [build.rs](build.rs) compiles referenced C files under [CMSIS-DSP/Source](CMSIS-DSP/Source) and links them into tests.
 
 ```bash
@@ -128,14 +107,6 @@ Notes:
 - Requires a working host C compiler (`cc`/`clang`)
 - Requires a complete [CMSIS-DSP](CMSIS-DSP) directory
 - Without `difftest`, integration tests that rely on CMSIS extern symbols are expected to fail at link time
-
-## Repository Layout
-
-- Core Rust implementation: [src](src)
-- Differential tests: [tests](tests)
-- CMSIS reference sources and assets: [CMSIS-DSP](CMSIS-DSP)
-- Build script: [build.rs](build.rs)
-- Package manifest: [Cargo.toml](Cargo.toml)
 
 ## Design Goals
 

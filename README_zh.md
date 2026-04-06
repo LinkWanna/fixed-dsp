@@ -2,14 +2,14 @@
 
 Rust 固定点 DSP 库，目标是提供一组与 CMSIS-DSP 行为接近的 Q15/Q31 算法实现，并支持与 CMSIS C 参考实现进行差分测试（difftest）。
 
-当前 crate 名称是 `fixed-dsp`，代码入口在 [src/lib.rs](src/lib.rs)。
+[English](https://github.com/LinkWanna/fixed-dsp/blob/main/README.md)
 
 ## 特性概览
 
 - `#![no_std]`：适合嵌入式环境，无需标准库
 - Q15/Q31 双精度族实现（`i16`/`i32`）
 - 模块化结构：基础算子、矩阵、统计、复数运算、变换、MFCC
-- 可选 `difftest` 特性：启用后通过 [build.rs](build.rs) 构建 CMSIS-DSP C 参考函数，用于差分验证
+- 可选 `difftest` 特性：启用后构建 CMSIS-DSP C 参考函数，用于差分验证
 
 ## 已实现模块
 
@@ -54,13 +54,6 @@ Rust 固定点 DSP 库，目标是提供一组与 CMSIS-DSP 行为接近的 Q15/
 - Radix-4 Butterfly：Q15/Q31 正反变换实现
 - MFCC：`MfccI16` / `MfccI32`
 
-### Common
-
-位于 [src/common](src/common)。
-
-- `Error` 与 `Result` 错误类型
-- 各类查表常量（sin/twiddle/bit-reversal/real-FFT 系数）
-
 ## 快速开始
 
 ### 1. 添加依赖
@@ -69,7 +62,7 @@ Rust 固定点 DSP 库，目标是提供一组与 CMSIS-DSP 行为接近的 Q15/
 
 ```toml
 [dependencies]
-fixed-dsp = { path = "../fixed-dsp" }
+fixed-dsp = "0.2"
 ```
 
 ### 2. 基础示例（Q15 正弦）
@@ -103,20 +96,6 @@ fn main() {
 
 ## 构建与测试
 
-### 普通构建
-
-```bash
-cargo check
-```
-
-### 不依赖 CMSIS C 参考库的测试
-
-```bash
-cargo test --lib
-```
-
-### 运行 difftest（与 CMSIS-DSP 对比）
-
 启用 `difftest` 特性后，`build.rs` 会编译 `CMSIS-DSP/Source` 下被引用的 C 文件并链接测试。
 
 ```bash
@@ -128,14 +107,6 @@ cargo test --lib --tests --features difftest
 - 该模式需要可用的本地 C 编译器（如 `cc`/`clang`）
 - 需要仓库中的 `CMSIS-DSP` 子目录保持完整
 - 如果不启用 `difftest`，依赖 CMSIS extern 符号的集成测试会链接失败，这是预期行为
-
-## 仓库结构
-
-- 核心实现： [src](src)
-- 差分测试： [tests](tests)
-- CMSIS 参考实现与数据： [CMSIS-DSP](CMSIS-DSP)
-- 构建脚本： [build.rs](build.rs)
-- 包配置： [Cargo.toml](Cargo.toml)
 
 ## 设计目标
 
