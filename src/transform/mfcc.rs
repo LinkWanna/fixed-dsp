@@ -8,25 +8,15 @@ use crate::statistics::{absmax_i16, absmax_i32};
 use crate::transform::{RfftI16, RfftI32};
 use crate::{sat_i16, sat_i32};
 
-#[inline]
-fn mul_q15(a: i16, b: i16) -> i16 {
-    sat_i16(((a as i32) * (b as i32)) >> 15)
-}
-
-#[inline]
-fn mul_q31(a: i32, b: i32) -> i32 {
-    sat_i32((((a as i64) * (b as i64)) >> 32) << 1)
-}
-
 pub struct MfccI16 {
     pub n_fft: usize,
     pub n_mels: usize,
     pub n_mfcc: usize,
-    pub dct: &'static [i16],
-    pub filter: &'static [i16],
-    pub filter_pos: &'static [i16],
-    pub filter_len: &'static [i16],
-    pub window: &'static [i16],
+    pub dct: &'static [u16],
+    pub filter: &'static [u16],
+    pub filter_pos: &'static [u16],
+    pub filter_len: &'static [u16],
+    pub window: &'static [u16],
     pub rfft: RfftI16,
 }
 
@@ -35,11 +25,11 @@ impl MfccI16 {
         n_fft: usize,               // FFT size
         n_mels: usize,              // Number of Mel filters
         n_mfcc: usize,              // Number of MFCC coefficients
-        dct: &'static [i16],        // DCT matrix for MFCC computation
-        filter: &'static [i16],     // Mel filter bank coefficients
-        filter_pos: &'static [i16], // Starting positions of each filter in the FFT output
-        filter_len: &'static [i16], // Lengths of each filter
-        window: &'static [i16],     // Window function coefficients
+        dct: &'static [u16],        // DCT matrix for MFCC computation
+        filter: &'static [u16],     // Mel filter bank coefficients
+        filter_pos: &'static [u16], // Starting positions of each filter in the FFT output
+        filter_len: &'static [u16], // Lengths of each filter
+        window: &'static [u16],     // Window function coefficients
     ) -> Self {
         assert!(
             dct.len() == n_mfcc * n_mels,
@@ -72,6 +62,11 @@ impl MfccI16 {
         // CMSIS reuses the q31 tmp as q15 FFT scratch with a reinterpret cast.
         let tmp_q15 =
             unsafe { core::slice::from_raw_parts_mut(tmp.as_mut_ptr() as *mut i16, tmp.len() * 2) };
+        let dct_i16 =
+            unsafe { core::slice::from_raw_parts(self.dct.as_ptr() as *const i16, self.dct.len()) };
+        let filter_i16 = unsafe {
+            core::slice::from_raw_parts(self.filter.as_ptr() as *const i16, self.filter.len())
+        };
 
         let (max_abs, _) = absmax_i16(input, self.n_fft);
 
@@ -81,7 +76,7 @@ impl MfccI16 {
         }
 
         for (sample, &window) in input.iter_mut().zip(self.window.iter()) {
-            *sample = mul_q15(*sample, window);
+            *sample = sat_i16(((*sample as i32) * (window as i32)) >> 15);
         }
 
         self.rfft.run(input, &mut tmp_q15[..self.n_fft * 2]);
@@ -102,7 +97,7 @@ impl MfccI16 {
 
             let acc = dot_i16(
                 &input[filter_pos..filter_pos + filter_len],
-                &self.filter[packed_pos..filter_end],
+                &filter_i16[packed_pos..filter_end],
             );
             packed_pos = filter_end;
 
@@ -128,7 +123,7 @@ impl MfccI16 {
         let dct = Matrix {
             rows: self.n_mfcc,
             cols: self.n_mels,
-            data: self.dct.as_ptr() as *mut i16,
+            data: dct_i16.as_ptr() as *mut i16,
         };
         mat_vec_mul_i16(dct, &input[..self.n_mels], output);
     }
@@ -138,11 +133,11 @@ pub struct MfccI32 {
     pub n_fft: usize,
     pub n_mels: usize,
     pub n_mfcc: usize,
-    pub dct: &'static [i32],
-    pub filter: &'static [i32],
-    pub filter_pos: &'static [u32],
-    pub filter_len: &'static [u32],
-    pub window: &'static [i32],
+    pub dct: &'static [u32],
+    pub filter: &'static [u32],
+    pub filter_pos: &'static [u16],
+    pub filter_len: &'static [u16],
+    pub window: &'static [u32],
     pub rfft: RfftI32,
 }
 
@@ -151,11 +146,11 @@ impl MfccI32 {
         n_fft: usize,
         n_mels: usize,
         n_mfcc: usize,
-        dct: &'static [i32],
-        filter: &'static [i32],
-        filter_pos: &'static [u32],
-        filter_len: &'static [u32],
-        window: &'static [i32],
+        dct: &'static [u32],
+        filter: &'static [u32],
+        filter_pos: &'static [u16],
+        filter_len: &'static [u16],
+        window: &'static [u32],
     ) -> Self {
         assert!(
             dct.len() == n_mfcc * n_mels,
@@ -188,6 +183,11 @@ impl MfccI32 {
         const LOG2TOLOG_Q31: i32 = 0x02C5_C860;
         const MICRO_Q31: i64 = 0x0863_7BD0;
         const SHIFT_MELFILTER_SATURATION_Q31: i32 = 10;
+        let dct =
+            unsafe { core::slice::from_raw_parts(self.dct.as_ptr() as *const i32, self.dct.len()) };
+        let filter = unsafe {
+            core::slice::from_raw_parts(self.filter.as_ptr() as *const i32, self.filter.len())
+        };
 
         assert!(
             tmp.len() >= self.n_fft * 2,
@@ -202,7 +202,7 @@ impl MfccI32 {
         }
 
         for (sample, &window) in input.iter_mut().zip(self.window.iter()) {
-            *sample = mul_q31(*sample, window);
+            *sample = sat_i32((((*sample as i64) * (window as i64)) >> 32) << 1);
         }
 
         self.rfft.run(input, &mut tmp[..self.n_fft * 2]);
@@ -223,7 +223,7 @@ impl MfccI32 {
 
             let mut acc = dot_i32(
                 &input[filter_pos..filter_pos + filter_len],
-                &self.filter[packed_pos..filter_end],
+                &filter[packed_pos..filter_end],
             );
             packed_pos = filter_end;
 
@@ -246,7 +246,7 @@ impl MfccI32 {
         let dct = Matrix {
             rows: self.n_mfcc,
             cols: self.n_mels,
-            data: self.dct.as_ptr() as *mut i32,
+            data: dct.as_ptr() as *mut i32,
         };
         mat_vec_mul_i32(dct, &tmp[..self.n_mels], output);
     }

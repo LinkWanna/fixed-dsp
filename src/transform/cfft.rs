@@ -25,6 +25,21 @@ fn i32_mul(a: i32, b: i32) -> i32 {
     (((a as i64 * b as i64) + 0x8000_0000) >> 32) as i32
 }
 
+///                  Input and Output formats for CFFT Q15
+/// | CFFT Size  | Input Format  | Output Format  | Number of bits to upscale |
+/// | ---------: | ------------: | -------------: | ------------------------: |
+/// | 16         | 1.15          | 5.11           | 4                         |
+/// | 64         | 1.15          | 7.9            | 6                         |
+/// | 256        | 1.15          | 9.7            | 8                         |
+/// | 1024       | 1.15          | 11.5           | 10                        |
+///
+///                  Input and Output formats for CIFFT Q15
+/// | CIFFT Size  | Input Format  | Output Format  | Number of bits to upscale |
+/// | ----------: | ------------: | -------------: | ------------------------: |
+/// | 16          | 1.15          | 5.11           | 0                         |
+/// | 64          | 1.15          | 7.9            | 0                         |
+/// | 256         | 1.15          | 9.7            | 0                         |
+/// | 1024        | 1.15          | 11.5           | 0                         |
 pub struct CfftI16 {
     pub n_fft: usize,
     pub ifft_flag: bool,
@@ -199,6 +214,21 @@ impl CfftI16 {
     }
 }
 
+///                  Input and Output formats for CFFT Q31
+/// | CFFT Size  | Input Format  | Output Format  | Number of bits to upscale |
+/// | ---------: | ------------: | -------------: | ------------------------: |
+/// | 16         | 1.31          | 5.27           | 4                         |
+/// | 64         | 1.31          | 7.25           | 6                         |
+/// | 256        | 1.31          | 9.23           | 8                         |
+/// | 1024       | 1.31          | 11.21          | 10                        |
+///
+///                  Input and Output formats for CIFFT Q31
+/// | CIFFT Size  | Input Format  | Output Format  | Number of bits to upscale |
+/// | ----------: | ------------: | -------------: | ------------------------: |
+/// | 16          | 1.31          | 5.27           | 0                         |
+/// | 64          | 1.31          | 7.25           | 0                         |
+/// | 256         | 1.31          | 9.23           | 0                         |
+/// | 1024        | 1.31          | 11.21          | 0                         |
 pub struct CfftI32 {
     pub n_fft: usize,
     pub ifft_flag: bool,

@@ -7,6 +7,33 @@ fn i32_mul(a: i32, b: i32) -> i32 {
     (((a as i64 * b as i64) + 0x8000_0000) >> 32) as i32
 }
 
+/// Real-valued Fast Fourier Transform (RFFT) and its inverse (RIFFT) implementations for 16-bit fixed-point data.
+///
+///                   Input and Output formats for RFFT Q15
+/// | RFFT Size  | Input Format  | Output Format  | Number of bits to upscale |
+/// | ---------: | ------------: | -------------: | ------------------------: |
+/// | 32         | 1.15          | 6.10           | 5                         |
+/// | 64         | 1.15          | 7.9            | 6                         |
+/// | 128        | 1.15          | 8.8            | 7                         |
+/// | 256        | 1.15          | 9.7            | 8                         |
+/// | 512        | 1.15          | 10.6           | 9                         |
+/// | 1024       | 1.15          | 11.5           | 10                        |
+/// | 2048       | 1.15          | 12.4           | 11                        |
+/// | 4096       | 1.15          | 13.3           | 12                        |
+/// | 8192       | 1.15          | 14.2           | 13                        |
+///
+///                   Input and Output formats for RIFFT Q15
+/// | RFFT Size  | Input Format  | Output Format  | Number of bits to upscale |
+/// | ---------: | ------------: | -------------: | ------------------------: |
+/// | 32         | 1.15          | 6.10           | 0                         |
+/// | 64         | 1.15          | 7.9            | 0                         |
+/// | 128        | 1.15          | 8.8            | 0                         |
+/// | 256        | 1.15          | 9.7            | 0                         |
+/// | 512        | 1.15          | 10.6           | 0                         |
+/// | 1024       | 1.15          | 11.5           | 0                         |
+/// | 2048       | 1.15          | 12.4           | 0                         |
+/// | 4096       | 1.15          | 13.3           | 0                         |
+/// | 8192       | 1.15          | 14.2           | 0                         |
 pub struct RfftI16 {
     pub n_fft_real: usize,
     pub ifft_flag: bool,
@@ -165,6 +192,33 @@ impl RfftI16 {
     }
 }
 
+/// Real-valued Fast Fourier Transform (RFFT) and its inverse (RIFFT) implementations for 32-bit fixed-point data.
+
+///                   Input and Output formats for RFFT Q31
+/// | RFFT Size  | Input Format  | Output Format  | Number of bits to upscale |
+/// | ---------: | ------------: | -------------: | ------------------------: |
+/// | 32         | 1.31          | 6.26           | 5                         |
+/// | 64         | 1.31          | 7.25           | 6                         |
+/// | 128        | 1.31          | 8.24           | 7                         |
+/// | 256        | 1.31          | 9.23           | 8                         |
+/// | 512        | 1.31          | 10.22          | 9                         |
+/// | 1024       | 1.31          | 11.21          | 10                        |
+/// | 2048       | 1.31          | 12.20          | 11                        |
+/// | 4096       | 1.31          | 13.19          | 12                        |
+/// | 8192       | 1.31          | 14.18          | 13                        |
+///
+///                   Input and Output formats for RIFFT Q31
+/// | RIFFT Size  | Input Format  | Output Format  | Number of bits to upscale |
+/// | ----------: | ------------: | -------------: | ------------------------: |
+/// | 32          | 1.31          | 6.26           | 0                         |
+/// | 64          | 1.31          | 7.25           | 0                         |
+/// | 128         | 1.31          | 8.24           | 0                         |
+/// | 256         | 1.31          | 9.23           | 0                         |
+/// | 512         | 1.31          | 10.22          | 0                         |
+/// | 1024        | 1.31          | 11.21          | 0                         |
+/// | 2048        | 1.31          | 12.20          | 0                         |
+/// | 4096        | 1.31          | 13.19          | 0                         |
+/// | 8192        | 1.31          | 14.18          | 0                         |
 pub struct RfftI32 {
     pub n_fft_real: usize,
     pub ifft_flag: bool,

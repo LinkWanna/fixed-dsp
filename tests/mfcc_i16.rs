@@ -132,13 +132,17 @@ fn mfcc_i16_difftest_against_cmsis() {
         })
         .collect();
 
-    let dct = leak_q15(&mfcc_data::MCFF_DCT_U16);
-    let filter = leak_q15(&mfcc_data::MEL_FILTER_U16);
-    let filter_pos_q15 = leak_q15(&mfcc_data::MEL_FILTER_POS_U16);
-    let filter_len_q15 = leak_q15(&mfcc_data::MEL_FILTER_LEN_U16);
+    let dct = &mfcc_data::MCFF_DCT_U16;
+    let filter = &mfcc_data::MEL_FILTER_U16;
+    let filter_pos_q15 = &mfcc_data::MEL_FILTER_POS_U16;
+    let filter_len_q15 = &mfcc_data::MEL_FILTER_LEN_U16;
     let filter_pos = leak_u32(&mfcc_data::MEL_FILTER_POS_U16);
     let filter_len = leak_u32(&mfcc_data::MEL_FILTER_LEN_U16);
-    let window = leak_q15(&mfcc_data::MCFF_WINDOW_U16);
+    let window = &mfcc_data::MCFF_WINDOW_U16;
+
+    let dct_cmsis = leak_q15(dct);
+    let filter_cmsis = leak_q15(filter);
+    let window_cmsis = leak_q15(window);
 
     let mfcc = MfccI16::new(
         256,
@@ -155,8 +159,14 @@ fn mfcc_i16_difftest_against_cmsis() {
     let mut rust_tmp = [0_i32; 256];
     mfcc.run(&mut rust_input, &mut rust_output, &mut rust_tmp);
 
-    let (status, cmsis_output) =
-        run_cmsis_mfcc(&input, dct, filter, &filter_pos, &filter_len, window);
+    let (status, cmsis_output) = run_cmsis_mfcc(
+        &input,
+        dct_cmsis,
+        filter_cmsis,
+        &filter_pos,
+        &filter_len,
+        window_cmsis,
+    );
     assert_eq!(status, 0, "CMSIS MFCC init/run failed");
     assert_eq!(
         rust_output.as_slice(),
@@ -183,14 +193,24 @@ fn mfcc_i16_matches_cmsis_reference_scale() {
         })
         .collect();
 
-    let dct = leak_q15(&mfcc_data::MCFF_DCT_U16);
-    let filter = leak_q15(&mfcc_data::MEL_FILTER_U16);
+    let dct = &mfcc_data::MCFF_DCT_U16;
+    let filter = &mfcc_data::MEL_FILTER_U16;
     let filter_pos = leak_u32(&mfcc_data::MEL_FILTER_POS_U16);
     let filter_len = leak_u32(&mfcc_data::MEL_FILTER_LEN_U16);
-    let window = leak_q15(&mfcc_data::MCFF_WINDOW_U16);
+    let window = &mfcc_data::MCFF_WINDOW_U16;
 
-    let (status, cmsis_output) =
-        run_cmsis_mfcc(&input, dct, filter, &filter_pos, &filter_len, window);
+    let dct_cmsis = leak_q15(dct);
+    let filter_cmsis = leak_q15(filter);
+    let window_cmsis = leak_q15(window);
+
+    let (status, cmsis_output) = run_cmsis_mfcc(
+        &input,
+        dct_cmsis,
+        filter_cmsis,
+        &filter_pos,
+        &filter_len,
+        window_cmsis,
+    );
     assert_eq!(status, 0, "CMSIS MFCC init/run failed");
 
     for (index, (&actual, &expected)) in cmsis_output.iter().zip(reference.iter()).enumerate() {
