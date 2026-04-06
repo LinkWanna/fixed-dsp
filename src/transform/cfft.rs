@@ -15,6 +15,9 @@ use super::{
     radix4_butterfly_inverse_i16, radix4_butterfly_inverse_i32,
 };
 
+const RADIX4_MODIFIER: u16 = 1;
+const RADIX4BY2_MODIFIER: u16 = 2;
+
 #[inline]
 fn i16_mul(a: i16, b: i16) -> i16 {
     (((a as i32) * (b as i32)) >> 16) as i16
@@ -23,6 +26,26 @@ fn i16_mul(a: i16, b: i16) -> i16 {
 #[inline]
 fn i32_mul(a: i32, b: i32) -> i32 {
     (((a as i64 * b as i64) + 0x8000_0000) >> 32) as i32
+}
+
+#[inline]
+fn upshift_quads_i16(data: &mut [i16]) {
+    for quad in data.chunks_exact_mut(4) {
+        quad[0] = quad[0].wrapping_shl(1);
+        quad[1] = quad[1].wrapping_shl(1);
+        quad[2] = quad[2].wrapping_shl(1);
+        quad[3] = quad[3].wrapping_shl(1);
+    }
+}
+
+#[inline]
+fn upshift_quads_i32(data: &mut [i32]) {
+    for quad in data.chunks_exact_mut(4) {
+        quad[0] = quad[0].wrapping_shl(1);
+        quad[1] = quad[1].wrapping_shl(1);
+        quad[2] = quad[2].wrapping_shl(1);
+        quad[3] = quad[3].wrapping_shl(1);
+    }
 }
 
 ///                  Input and Output formats for CFFT Q15
@@ -118,12 +141,7 @@ impl CfftI16 {
         radix4_butterfly_i16(&mut data[..n_fft], n2, twiddle, modifier);
         radix4_butterfly_i16(&mut data[n_fft..], n2, twiddle, modifier);
 
-        for i in 0..n2 {
-            data[4 * i] = data[4 * i].wrapping_shl(1);
-            data[4 * i + 1] = data[4 * i + 1].wrapping_shl(1);
-            data[4 * i + 2] = data[4 * i + 2].wrapping_shl(1);
-            data[4 * i + 3] = data[4 * i + 3].wrapping_shl(1);
-        }
+        upshift_quads_i16(data);
     }
 
     fn radix4by2_butterfly_inverse_i16(
@@ -161,50 +179,35 @@ impl CfftI16 {
         radix4_butterfly_inverse_i16(&mut data[..n_fft], n2, twiddle, modifier);
         radix4_butterfly_inverse_i16(&mut data[n_fft..], n2, twiddle, modifier);
 
-        for i in 0..n2 {
-            data[4 * i] = data[4 * i].wrapping_shl(1);
-            data[4 * i + 1] = data[4 * i + 1].wrapping_shl(1);
-            data[4 * i + 2] = data[4 * i + 2].wrapping_shl(1);
-            data[4 * i + 3] = data[4 * i + 3].wrapping_shl(1);
-        }
+        upshift_quads_i16(data);
     }
 
     /// Q15 CFFT/CIFFT entry compatible with CMSIS `arm_cfft_q15` dispatch behavior.
-    pub fn run(self, data: &mut [i16]) {
+    pub fn run(&self, data: &mut [i16]) {
         assert_eq!(
             data.len(),
             self.n_fft * 2,
             "Q15 buffer length must be 2 * n_fft"
         );
 
-        let radix4_modifier = 1u16;
-        let radix4by2_modifier = 2u16;
+        let use_radix4by2 = matches!(self.n_fft, 32 | 128 | 512 | 2048);
 
         if self.ifft_flag {
-            match self.n_fft {
-                16 | 64 | 256 | 1024 | 4096 => {
-                    radix4_butterfly_inverse_i16(data, self.n_fft, self.twiddle, radix4_modifier)
-                }
-                32 | 128 | 512 | 2048 => Self::radix4by2_butterfly_inverse_i16(
+            if use_radix4by2 {
+                Self::radix4by2_butterfly_inverse_i16(
                     data,
                     self.n_fft,
                     self.twiddle,
-                    radix4by2_modifier,
-                ),
-                _ => unreachable!(),
+                    RADIX4BY2_MODIFIER,
+                );
+            } else {
+                radix4_butterfly_inverse_i16(data, self.n_fft, self.twiddle, RADIX4_MODIFIER);
             }
         } else {
-            match self.n_fft {
-                16 | 64 | 256 | 1024 | 4096 => {
-                    radix4_butterfly_i16(data, self.n_fft, self.twiddle, radix4_modifier)
-                }
-                32 | 128 | 512 | 2048 => Self::radix4by2_butterfly_i16(
-                    data,
-                    self.n_fft,
-                    self.twiddle,
-                    radix4by2_modifier,
-                ),
-                _ => unreachable!(),
+            if use_radix4by2 {
+                Self::radix4by2_butterfly_i16(data, self.n_fft, self.twiddle, RADIX4BY2_MODIFIER);
+            } else {
+                radix4_butterfly_i16(data, self.n_fft, self.twiddle, RADIX4_MODIFIER);
             }
         }
 
@@ -309,12 +312,7 @@ impl CfftI32 {
         radix4_butterfly_i32(&mut data[..n_fft], n2, twiddle, radix4_modifier);
         radix4_butterfly_i32(&mut data[n_fft..], n2, twiddle, radix4_modifier);
 
-        for i in 0..n2 {
-            data[4 * i] = data[4 * i].wrapping_shl(1);
-            data[4 * i + 1] = data[4 * i + 1].wrapping_shl(1);
-            data[4 * i + 2] = data[4 * i + 2].wrapping_shl(1);
-            data[4 * i + 3] = data[4 * i + 3].wrapping_shl(1);
-        }
+        upshift_quads_i32(data);
     }
 
     fn radix4by2_butterfly_inverse_i32(
@@ -349,12 +347,7 @@ impl CfftI32 {
         radix4_butterfly_inverse_i32(&mut data[..n_fft], n2, twiddle, radix4_modifier);
         radix4_butterfly_inverse_i32(&mut data[n_fft..], n2, twiddle, radix4_modifier);
 
-        for i in 0..n2 {
-            data[4 * i] = data[4 * i].wrapping_shl(1);
-            data[4 * i + 1] = data[4 * i + 1].wrapping_shl(1);
-            data[4 * i + 2] = data[4 * i + 2].wrapping_shl(1);
-            data[4 * i + 3] = data[4 * i + 3].wrapping_shl(1);
-        }
+        upshift_quads_i32(data);
     }
 
     /// Q31 CFFT/CIFFT entry with the same dispatch pattern as CMSIS `arm_cfft_q31`.
@@ -365,34 +358,24 @@ impl CfftI32 {
             "Q31 buffer length must be 2 * n_fft"
         );
 
-        let radix4_modifier = 1u16;
-        let radix4by2_modifier = 2u16;
+        let use_radix4by2 = matches!(self.n_fft, 32 | 128 | 512 | 2048);
 
         if self.ifft_flag {
-            match self.n_fft {
-                16 | 64 | 256 | 1024 | 4096 => {
-                    radix4_butterfly_inverse_i32(data, self.n_fft, self.twiddle, radix4_modifier)
-                }
-                32 | 128 | 512 | 2048 => Self::radix4by2_butterfly_inverse_i32(
+            if use_radix4by2 {
+                Self::radix4by2_butterfly_inverse_i32(
                     data,
                     self.n_fft,
                     self.twiddle,
-                    radix4by2_modifier,
-                ),
-                _ => unreachable!(),
+                    RADIX4BY2_MODIFIER,
+                );
+            } else {
+                radix4_butterfly_inverse_i32(data, self.n_fft, self.twiddle, RADIX4_MODIFIER);
             }
         } else {
-            match self.n_fft {
-                16 | 64 | 256 | 1024 | 4096 => {
-                    radix4_butterfly_i32(data, self.n_fft, self.twiddle, radix4_modifier)
-                }
-                32 | 128 | 512 | 2048 => Self::radix4by2_butterfly_i32(
-                    data,
-                    self.n_fft,
-                    self.twiddle,
-                    radix4by2_modifier,
-                ),
-                _ => unreachable!(),
+            if use_radix4by2 {
+                Self::radix4by2_butterfly_i32(data, self.n_fft, self.twiddle, RADIX4BY2_MODIFIER);
+            } else {
+                radix4_butterfly_i32(data, self.n_fft, self.twiddle, RADIX4_MODIFIER);
             }
         }
 

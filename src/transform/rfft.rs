@@ -2,6 +2,8 @@ use crate::common::tables::{REAL_COEF_A_U16, REAL_COEF_A_U32, REAL_COEF_B_U16, R
 
 use super::{CfftI16, CfftI32};
 
+const REAL_COEF_MODULUS: usize = 8192;
+
 #[inline]
 fn i32_mul(a: i32, b: i32) -> i32 {
     (((a as i64 * b as i64) + 0x8000_0000) >> 32) as i32
@@ -68,10 +70,8 @@ impl RfftI16 {
         re_table: &[u16],
         im_table: &[u16],
         output: &mut [i16],
-        modifier: u32,
+        modifier: usize,
     ) {
-        let modifier = modifier as usize;
-
         for i in 1..n_fft {
             let src1 = 2 * i;
             let src2 = (2 * n_fft) - (2 * i);
@@ -93,9 +93,9 @@ impl RfftI16 {
             output[2 * i] = out_r as i16;
             output[2 * i + 1] = out_i as i16;
 
-            let conj = (4 * n_fft) - (2 * i);
+            let conj = (4 * n_fft) - src1;
             output[conj] = out_r as i16;
-            output[conj + 1] = (-(out_i as i16)) as i16;
+            output[conj + 1] = (out_i as i16).wrapping_neg();
         }
 
         output[2 * n_fft] = ((input[0] as i32 - input[1] as i32) >> 1) as i16;
@@ -111,10 +111,8 @@ impl RfftI16 {
         re_table: &[u16],
         im_table: &[u16],
         output: &mut [i16],
-        modifier: u32,
+        modifier: usize,
     ) {
-        let modifier = modifier as usize;
-
         for i in 0..n_fft {
             let src1 = 2 * i;
             let src2 = (2 * n_fft) - (2 * i);
@@ -138,9 +136,9 @@ impl RfftI16 {
         }
     }
 
-    pub fn run(&self, input: &[i16], output: &mut [i16]) {
+    pub fn run(&self, input: &mut [i16], output: &mut [i16]) {
         let n_fft = self.n_fft_real >> 1;
-        let modifier = (8192 / self.n_fft_real) as u32;
+        let modifier = REAL_COEF_MODULUS / self.n_fft_real;
 
         if self.ifft_flag {
             assert_eq!(
@@ -174,20 +172,9 @@ impl RfftI16 {
                 "RFFT output length must be 2 * n_fft_real"
             );
 
-            // Use a fixed-capacity local scratch to run the intermediate complex FFT.
-            let mut scratch = [0i16; 4096];
-            scratch[..self.n_fft_real].copy_from_slice(input);
+            CfftI16::new(n_fft, false, self.bit_reverse_flag).run(input);
 
-            CfftI16::new(n_fft, false, self.bit_reverse_flag).run(&mut scratch[..self.n_fft_real]);
-
-            Self::split_rfft_i16(
-                &scratch[..self.n_fft_real],
-                n_fft,
-                self.re_table,
-                self.im_table,
-                output,
-                modifier,
-            );
+            Self::split_rfft_i16(input, n_fft, self.re_table, self.im_table, output, modifier);
         }
     }
 }
@@ -253,10 +240,8 @@ impl RfftI32 {
         re_table: &[u32],
         im_table: &[u32],
         output: &mut [i32],
-        modifier: u32,
+        modifier: usize,
     ) {
-        let modifier = modifier as usize;
-
         for i in 1..n_fft {
             let src1 = 2 * i;
             let src2 = (2 * n_fft) - (2 * i);
@@ -284,7 +269,7 @@ impl RfftI32 {
             output[2 * i] = out_r;
             output[2 * i + 1] = out_i;
 
-            let conj = (4 * n_fft) - (2 * i);
+            let conj = (4 * n_fft) - src1;
             output[conj] = out_r;
             output[conj + 1] = out_i.wrapping_neg();
         }
@@ -302,10 +287,8 @@ impl RfftI32 {
         re_table: &[u32],
         im_table: &[u32],
         output: &mut [i32],
-        modifier: u32,
+        modifier: usize,
     ) {
-        let modifier = modifier as usize;
-
         for i in 0..n_fft {
             let src1 = 2 * i;
             let src2 = (2 * n_fft) - (2 * i);
@@ -335,9 +318,9 @@ impl RfftI32 {
         }
     }
 
-    pub fn run(&self, input: &[i32], output: &mut [i32]) {
+    pub fn run(&self, input: &mut [i32], output: &mut [i32]) {
         let n_fft = self.n_fft_real >> 1;
-        let modifier = (8192 / self.n_fft_real) as u32;
+        let modifier = REAL_COEF_MODULUS / self.n_fft_real;
 
         if self.ifft_flag {
             assert_eq!(
@@ -370,20 +353,9 @@ impl RfftI32 {
                 "RFFT output length must be 2 * n_fft_real"
             );
 
-            // Use a fixed-capacity local scratch to run the intermediate complex FFT.
-            let mut scratch = [0i32; 8192];
-            scratch[..self.n_fft_real].copy_from_slice(input);
+            CfftI32::new(n_fft, false, self.bit_reverse_flag).run(input);
 
-            CfftI32::new(n_fft, false, self.bit_reverse_flag).run(&mut scratch[..self.n_fft_real]);
-
-            Self::split_rfft_i32(
-                &scratch[..self.n_fft_real],
-                n_fft,
-                self.re_table,
-                self.im_table,
-                output,
-                modifier,
-            );
+            Self::split_rfft_i32(input, n_fft, self.re_table, self.im_table, output, modifier);
         }
     }
 }

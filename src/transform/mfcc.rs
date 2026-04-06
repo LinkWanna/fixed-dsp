@@ -8,6 +8,34 @@ use crate::statistics::{absmax_i16, absmax_i32};
 use crate::transform::{RfftI16, RfftI32};
 use crate::{sat_i16, sat_i32};
 
+const LOG2TOLOG_Q15: i32 = 0x02C5_C860;
+const MICRO_Q15: i64 = 0x0000_0219;
+const SHIFT_MELFILTER_SATURATION_Q15: i32 = 10;
+
+const LOG2TOLOG_Q31: i32 = 0x02C5_C860;
+const MICRO_Q31: i64 = 0x0863_7BD0;
+const SHIFT_MELFILTER_SATURATION_Q31: i32 = 10;
+
+#[inline]
+fn view_u16_as_i16(data: &[u16]) -> &[i16] {
+    unsafe { core::slice::from_raw_parts(data.as_ptr() as *const i16, data.len()) }
+}
+
+#[inline]
+fn view_u32_as_i32(data: &[u32]) -> &[i32] {
+    unsafe { core::slice::from_raw_parts(data.as_ptr() as *const i32, data.len()) }
+}
+
+#[inline]
+fn view_i16_as_i32_mut(data: &mut [i16], min_i32_len: usize) -> &mut [i32] {
+    let (_, body, _) = unsafe { data.align_to_mut::<i32>() };
+    assert!(
+        body.len() >= min_i32_len,
+        "tmp alignment/length must allow at least min_i32_len i32 values"
+    );
+    body
+}
+
 pub struct MfccI16 {
     pub n_fft: usize,
     pub n_mels: usize,
@@ -58,17 +86,15 @@ impl MfccI16 {
         }
     }
 
-    pub fn run(&self, input: &mut [i16], output: &mut [i16], tmp: &mut [i32]) {
-        // CMSIS reuses the q31 tmp as q15 FFT scratch with a reinterpret cast.
-        let tmp_q15 =
-            unsafe { core::slice::from_raw_parts_mut(tmp.as_mut_ptr() as *mut i16, tmp.len() * 2) };
-        let dct_i16 =
-            unsafe { core::slice::from_raw_parts(self.dct.as_ptr() as *const i16, self.dct.len()) };
-        let filter_i16 = unsafe {
-            core::slice::from_raw_parts(self.filter.as_ptr() as *const i16, self.filter.len())
-        };
+    pub fn run(&self, input: &mut [i16], output: &mut [i16], tmp: &mut [i16]) {
+        assert!(
+            tmp.len() >= self.n_fft * 2,
+            "tmp length must be at least 2 * n_fft for q15 MFCC"
+        );
 
-        // q15
+        let dct = view_u16_as_i16(self.dct);
+        let filter = view_u16_as_i16(self.filter);
+
         let (max_abs, _) = absmax_i16(input, self.n_fft);
 
         if max_abs != 0 && max_abs != i16::MAX {
@@ -76,55 +102,61 @@ impl MfccI16 {
             scale_i16(input, quotient, shift as i8);
         }
 
-        for (sample, &window) in input.iter_mut().zip(self.window.iter()) {
+        for (sample, &window) in input.iter_mut().zip(self.window) {
             *sample = sat_i16(((*sample as i32) * (window as i32)) >> 15);
         }
 
-        self.rfft.run(input, &mut tmp_q15[..self.n_fft * 2]);
+        {
+            let tmp_fft = &mut tmp[..self.n_fft * 2];
+            self.rfft.run(input, tmp_fft);
 
-        let filter_limit = 1 + (self.n_fft >> 1);
-        cmplx_mag_i16(&tmp_q15[..filter_limit * 2], &mut input[..filter_limit]);
+            let filter_limit = 1 + (self.n_fft >> 1);
+            cmplx_mag_i16(&tmp_fft[..filter_limit * 2], &mut input[..filter_limit]);
+        }
+
+        let tmp_q31 = view_i16_as_i32_mut(tmp, self.n_mels);
 
         let mut packed_pos = 0usize;
-        for (index, (&filter_pos, &filter_len)) in self
-            .filter_pos
-            .iter()
-            .zip(self.filter_len.iter())
-            .enumerate()
+        for ((dst, &filter_pos), &filter_len) in tmp_q31
+            .iter_mut()
+            .zip(self.filter_pos)
+            .zip(self.filter_len)
+            .take(self.n_mels)
         {
-            let filter_pos = filter_pos as usize;
-            let filter_len = filter_len as usize;
+            let filter_pos = usize::from(filter_pos);
+            let filter_len = usize::from(filter_len);
             let filter_end = packed_pos + filter_len;
 
             let acc = dot_i16(
                 &input[filter_pos..filter_pos + filter_len],
-                &filter_i16[packed_pos..filter_end],
+                &filter[packed_pos..filter_end],
             );
             packed_pos = filter_end;
 
-            let acc = (acc + 0x219) >> 10;
-            tmp[index] = sat_i32(acc);
+            let acc = (acc + MICRO_Q15) >> SHIFT_MELFILTER_SATURATION_Q15;
+            *dst = sat_i32(acc);
         }
 
         if max_abs != 0 && max_abs != i16::MAX {
-            scale_i32(&mut tmp[..self.n_mels], (max_abs as i32) << 16, 0);
+            scale_i32(&mut tmp_q31[..self.n_mels], (max_abs as i32) << 16, 0);
         }
 
-        vlog_i32_in_place(&mut tmp[..self.n_mels]);
+        vlog_i32_in_place(&mut tmp_q31[..self.n_mels]);
 
         let fft_shift = self.n_fft.trailing_zeros() as i32;
-        let log_exponent = (fft_shift + 2 + 10).wrapping_mul(0x02C5C860);
-        offset_i32(&mut tmp[..self.n_mels], log_exponent);
-        shift_i32(&mut tmp[..self.n_mels], -19);
+        let log_exponent =
+            (fft_shift + 2 + SHIFT_MELFILTER_SATURATION_Q15).wrapping_mul(LOG2TOLOG_Q15);
+        offset_i32(&mut tmp_q31[..self.n_mels], log_exponent);
+        shift_i32(&mut tmp_q31[..self.n_mels], -19);
 
-        for (dst, &src) in input.iter_mut().zip(tmp.iter()).take(self.n_mels) {
+        for (dst, &src) in input.iter_mut().zip(tmp_q31.iter()).take(self.n_mels) {
             *dst = sat_i16(src);
         }
 
         let dct = Matrix {
             rows: self.n_mfcc,
             cols: self.n_mels,
-            data: dct_i16.as_ptr() as *mut i16,
+            data: dct.as_ptr() as *mut i16,
         };
         mat_vec_mul_i16(dct, &input[..self.n_mels], output);
     }
@@ -181,14 +213,8 @@ impl MfccI32 {
     }
 
     pub fn run(&self, input: &mut [i32], output: &mut [i32], tmp: &mut [i32]) {
-        const LOG2TOLOG_Q31: i32 = 0x02C5_C860;
-        const MICRO_Q31: i64 = 0x0863_7BD0;
-        const SHIFT_MELFILTER_SATURATION_Q31: i32 = 10;
-        let dct =
-            unsafe { core::slice::from_raw_parts(self.dct.as_ptr() as *const i32, self.dct.len()) };
-        let filter = unsafe {
-            core::slice::from_raw_parts(self.filter.as_ptr() as *const i32, self.filter.len())
-        };
+        let dct = view_u32_as_i32(self.dct);
+        let filter = view_u32_as_i32(self.filter);
 
         assert!(
             tmp.len() >= self.n_fft * 2,
@@ -202,7 +228,7 @@ impl MfccI32 {
             scale_i32(input, quotient, shift as i8);
         }
 
-        for (sample, &window) in input.iter_mut().zip(self.window.iter()) {
+        for (sample, &window) in input.iter_mut().zip(self.window) {
             *sample = sat_i32((((*sample as i64) * (window as i64)) >> 32) << 1);
         }
 
@@ -212,14 +238,14 @@ impl MfccI32 {
         cmplx_mag_i32(&tmp[..filter_limit * 2], &mut input[..filter_limit]);
 
         let mut packed_pos = 0usize;
-        for (index, (&filter_pos, &filter_len)) in self
-            .filter_pos
-            .iter()
-            .zip(self.filter_len.iter())
-            .enumerate()
+        for ((dst, &filter_pos), &filter_len) in tmp
+            .iter_mut()
+            .zip(self.filter_pos)
+            .zip(self.filter_len)
+            .take(self.n_mels)
         {
-            let filter_pos = filter_pos as usize;
-            let filter_len = filter_len as usize;
+            let filter_pos = usize::from(filter_pos);
+            let filter_len = usize::from(filter_len);
             let filter_end = packed_pos + filter_len;
 
             let mut acc = dot_i32(
@@ -229,7 +255,7 @@ impl MfccI32 {
             packed_pos = filter_end;
 
             acc = (acc + MICRO_Q31) >> (SHIFT_MELFILTER_SATURATION_Q31 + 18);
-            tmp[index] = sat_i32(acc);
+            *dst = sat_i32(acc);
         }
 
         if max_abs != 0 && max_abs != i32::MAX {

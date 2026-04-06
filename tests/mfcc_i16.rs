@@ -156,7 +156,7 @@ fn mfcc_i16_difftest_against_cmsis() {
     );
     let mut rust_input = input.clone();
     let mut rust_output = [0_i16; 13];
-    let mut rust_tmp = [0_i32; 256];
+    let mut rust_tmp = [0_i16; 512];
     mfcc.run(&mut rust_input, &mut rust_output, &mut rust_tmp);
 
     let (status, cmsis_output) = run_cmsis_mfcc(

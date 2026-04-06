@@ -325,12 +325,13 @@ fn rfft_q15_forward_difftest_against_cmsis() {
     for &fft_len_real in &[32usize, 64, 128, 256, 512, 1024, 2048, 4096] {
         for &bit_reverse_flag in &[false, true] {
             let input = sample_real_i16_buffer(fft_len_real);
+            let mut rust_input = input.clone();
 
             let mut rust_output = vec![0i16; fft_len_real * 2];
             let mut cmsis_output = vec![0i16; fft_len_real * 2];
 
             let cfg = RfftI16::new(fft_len_real, false, bit_reverse_flag);
-            cfg.run(&input, &mut rust_output);
+            cfg.run(&mut rust_input, &mut rust_output);
             cmsis_rfft_q15_forward(&input, &mut cmsis_output, bit_reverse_flag);
 
             assert_eq!(
@@ -354,7 +355,7 @@ fn rfft_q15_inverse_difftest_against_cmsis() {
             let mut cmsis_output = vec![0i16; fft_len_real];
 
             let cfg = RfftI16::new(fft_len_real, true, bit_reverse_flag);
-            cfg.run(&spectrum, &mut rust_output);
+            cfg.run(&mut spectrum, &mut rust_output);
             cmsis_rfft_q15_inverse(&spectrum, &mut cmsis_output, bit_reverse_flag);
 
             assert_eq!(
@@ -371,12 +372,13 @@ fn rfft_q31_forward_difftest_against_cmsis() {
     for &fft_len_real in &[32usize, 64, 128, 256, 512, 1024, 2048, 4096, 8192] {
         for &bit_reverse_flag in &[false, true] {
             let input = sample_real_i32_buffer(fft_len_real);
+            let mut rust_input = input.clone();
 
             let mut rust_output = vec![0i32; fft_len_real * 2];
             let mut cmsis_output = vec![0i32; fft_len_real * 2];
 
             let cfg = RfftI32::new(fft_len_real, false, bit_reverse_flag);
-            cfg.run(&input, &mut rust_output);
+            cfg.run(&mut rust_input, &mut rust_output);
             cmsis_rfft_q31_forward(&input, &mut cmsis_output, bit_reverse_flag);
 
             assert_eq!(
@@ -400,7 +402,7 @@ fn rfft_q31_inverse_difftest_against_cmsis() {
             let mut cmsis_output = vec![0i32; fft_len_real];
 
             let cfg = RfftI32::new(fft_len_real, true, bit_reverse_flag);
-            cfg.run(&spectrum, &mut rust_output);
+            cfg.run(&mut spectrum, &mut rust_output);
             cmsis_rfft_q31_inverse(&spectrum, &mut cmsis_output, bit_reverse_flag);
 
             assert_eq!(
