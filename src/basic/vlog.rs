@@ -52,6 +52,12 @@ pub fn vlog_i16(input: &[i16], output: &mut [i16]) {
     }
 }
 
+pub fn vlog_i16_in_place(input: &mut [i16]) {
+    for x in input.iter_mut() {
+        *x = log_i16(*x);
+    }
+}
+
 fn log_i32(x: i32) -> i32 {
     let src = x as u32;
 
@@ -91,5 +97,11 @@ pub fn vlog_i32(input: &[i32], output: &mut [i32]) {
     );
     for (x, y) in input.iter().zip(output.iter_mut()) {
         *y = log_i32(*x);
+    }
+}
+
+pub fn vlog_i32_in_place(input: &mut [i32]) {
+    for x in input.iter_mut() {
+        *x = log_i32(*x);
     }
 }

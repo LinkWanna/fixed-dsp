@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.signal.windows as sw
 
 from script.mfcc import dct, mel_filter, render_mfcc_template
 
@@ -18,7 +19,7 @@ def main():
     dct_matrix = dct(13, 20)
 
     # 窗函数
-    window = np.hamming(256)
+    window = sw.hamming(256, sym=False)
 
     rust_code = render_mfcc_template(
         ty="i16",

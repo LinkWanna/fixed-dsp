@@ -1,5 +1,4 @@
 import numpy as np
-
 from script.utils import format_array
 
 template = """
