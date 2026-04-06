@@ -1,4 +1,10 @@
 fn main() {
+    // Only build CMSIS-DSP C reference code when difftest feature is enabled.
+    println!("cargo:rerun-if-env-changed=CARGO_FEATURE_DIFFTEST");
+    if std::env::var_os("CARGO_FEATURE_DIFFTEST").is_none() {
+        return;
+    }
+
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/FastMathFunctions/arm_sin_q15.c");
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/FastMathFunctions/arm_sin_q31.c");
     println!("cargo:rerun-if-changed=CMSIS-DSP/Source/FastMathFunctions/arm_cos_q15.c");

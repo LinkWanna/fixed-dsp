@@ -1,8 +1,13 @@
 [package]
 name = "fixed-dsp"
-version = "0.1.0"
+version = "0.2.1"
+description = "A Rust library for fixed-point digital signal processing (DSP) algorithms."
 edition = "2024"
 build = "build.rs"
+
+[features]
+default = []
+difftest = []
 
 [dependencies]
 
