@@ -95,6 +95,7 @@ impl MfccI16 {
         let dct = view_u16_as_i16(self.dct);
         let filter = view_u16_as_i16(self.filter);
 
+        // 1) Front-end normalization to reduce overflow risk in fixed-point stages.
         let (max_abs, _) = absmax_i16(input, self.n_fft);
 
         if max_abs != 0 && max_abs != i16::MAX {
@@ -106,6 +107,7 @@ impl MfccI16 {
             *sample = sat_i16(((*sample as i32) * (window as i32)) >> 15);
         }
 
+        // 2) Time-domain to frequency-domain: RFFT then magnitude spectrum.
         {
             let tmp_fft = &mut tmp[..self.n_fft * 2];
             self.rfft.run(input, tmp_fft);
@@ -114,6 +116,7 @@ impl MfccI16 {
             cmplx_mag_i16(&tmp_fft[..filter_limit * 2], &mut input[..filter_limit]);
         }
 
+        // 3) Apply packed Mel filterbank (dot products over magnitude bins).
         let tmp_q31 = view_i16_as_i32_mut(tmp, self.n_mels);
 
         let mut packed_pos = 0usize;
@@ -137,6 +140,7 @@ impl MfccI16 {
             *dst = sat_i32(acc);
         }
 
+        // 4) Log-energy domain conversion with FFT/saturation compensation.
         if max_abs != 0 && max_abs != i16::MAX {
             scale_i32(&mut tmp_q31[..self.n_mels], (max_abs as i32) << 16, 0);
         }
@@ -153,6 +157,7 @@ impl MfccI16 {
             *dst = sat_i16(src);
         }
 
+        // 5) DCT projection from Mel log energies to MFCC coefficients.
         let dct = Matrix {
             rows: self.n_mfcc,
             cols: self.n_mels,
@@ -221,6 +226,7 @@ impl MfccI32 {
             "tmp length must be at least 2 * n_fft for q31 MFCC"
         );
 
+        // 1) Front-end normalization to reduce overflow risk in fixed-point stages.
         let (max_abs, _) = absmax_i32(input, self.n_fft);
 
         if max_abs != 0 && max_abs != i32::MAX {
@@ -232,11 +238,13 @@ impl MfccI32 {
             *sample = sat_i32((((*sample as i64) * (window as i64)) >> 32) << 1);
         }
 
+        // 2) Time-domain to frequency-domain: RFFT then magnitude spectrum.
         self.rfft.run(input, &mut tmp[..self.n_fft * 2]);
 
         let filter_limit = 1 + (self.n_fft >> 1);
         cmplx_mag_i32(&tmp[..filter_limit * 2], &mut input[..filter_limit]);
 
+        // 3) Apply packed Mel filterbank (dot products over magnitude bins).
         let mut packed_pos = 0usize;
         for ((dst, &filter_pos), &filter_len) in tmp
             .iter_mut()
@@ -258,6 +266,7 @@ impl MfccI32 {
             *dst = sat_i32(acc);
         }
 
+        // 4) Log-energy domain conversion with FFT/saturation compensation.
         if max_abs != 0 && max_abs != i32::MAX {
             scale_i32(&mut tmp[..self.n_mels], max_abs, 0);
         }
@@ -270,6 +279,7 @@ impl MfccI32 {
         offset_i32(&mut tmp[..self.n_mels], log_exponent);
         shift_i32(&mut tmp[..self.n_mels], -3);
 
+        // 5) DCT projection from Mel log energies to MFCC coefficients.
         let dct = Matrix {
             rows: self.n_mfcc,
             cols: self.n_mels,

@@ -11,11 +11,11 @@ pub fn mat_mul_i16(a: Matrix<i16>, b: Matrix<i16>, output: Matrix<i16>) -> Resul
     let cols = a.cols;
     let out_cols = output.cols;
 
-    unsafe {
-        for row in 0..rows {
-            for col in 0..b.cols {
-                let mut acc = 0_i64;
+    for row in 0..rows {
+        for col in 0..b.cols {
+            let mut acc = 0_i64;
 
+            unsafe {
                 for k in 0..cols {
                     let a_val = *a.data.add(row * cols + k) as i64;
                     let b_val = *b.data.add(k * b.cols + col) as i64;
@@ -42,11 +42,11 @@ pub fn mat_mul_i32(a: Matrix<i32>, b: Matrix<i32>, output: Matrix<i32>) -> Resul
     let cols = a.cols;
     let out_cols = output.cols;
 
-    unsafe {
-        for row in 0..rows {
-            for col in 0..b.cols {
-                let mut acc = 0_i64;
+    for row in 0..rows {
+        for col in 0..b.cols {
+            let mut acc = 0_i64;
 
+            unsafe {
                 for k in 0..cols {
                     let a_val = *a.data.add(row * cols + k) as i64;
                     let b_val = *b.data.add(k * b.cols + col) as i64;
