@@ -1,3 +1,27 @@
+/// Initial lookup table for the fast inverse square root approximation, in Q15 format (1.15 fixed-point).
+///
+/// Fast inverse square root approximation is a method to compute 1/sqrt(x) efficiently, often used in graphics and signal processing.
+/// The initial lookup table provides precomputed values for the approximation, which can be refined using Newton's method or similar techniques.
+/// ```rust
+/// /// Convert a floating-point number to fixed-point representation with q fractional bits.
+/// fn tofix(q: u32, a: f64) -> u16 {
+///     let r = (a * ((1u32 << q) as f64)).round() as i64;
+///     let max = ((1u32 << q) - 1) as i64;
+///     r.clamp(0, max) as u16
+/// }
+///
+/// let q: u32 = 15; // Number of fractional bits for Q15 format
+/// let nb: u32 = 4; // Number of bits for the index (16 entries)
+/// let shift: u32 = q - nb; // Number of bits to shift for the index (11 bits)
+///
+/// let table: Vec<u16> = ((1u32 << (q - 2))..=((1u32 << q) + 0x2000))
+///     .step_by(1usize << shift)
+///     .map(|i| {
+///         let x = i as f64 / ((1u32 << q) as f64);
+///         tofix(q, 1.0 / x.sqrt() / 8.0)
+///     })
+///     .collect();
+/// ```
 pub const SQRT_INITIAL_LUT_U16: [u16; 16] = [
     0x2000, 0x1C9F, 0x1A21, 0x1831, 0x16A1, 0x1555, 0x143D, 0x134C, 0x127A, 0x11C0, 0x111B, 0x1086,
     0x1000, 0x0F86, 0x0F16, 0x0EAF,
@@ -2773,6 +2797,8 @@ pub const TWIDDLE_TABLE_4096_U32: [u32; 6144] = [
     0xFF36F078, 0x80009DE9, 0xFF69343E, 0x800058D3, 0xFF9B781D, 0x8000277A, 0xFFCDBC0A, 0x800009DE,
 ];
 
+/// Bit reversal tables for FFT.
+/// The values in the tables represent the indices of the input data in bit-reversed order.
 pub const BIT_REV_TABLE_16: [u16; 12] = [
     /* radix 4, size 12 */
     0x0008, 0x0040, 0x0010, 0x0020, 0x0018, 0x0060, 0x0028, 0x0050, 0x0038, 0x0070, 0x0058, 0x0068,
@@ -3472,6 +3498,7 @@ pub const BIT_REV_TABLE_4096: [u16; 4032] = [
     0x78F8, 0x7C78, 0x7978, 0x7A78, 0x79F8, 0x7E78, 0x7AF8, 0x7D78, 0x7BF8, 0x7F78, 0x7DF8, 0x7EF8,
 ];
 
+/// Precomputed real coefficients for 4096-point FFT, in Q15 format.
 /// for i in 0..4096:
 ///     table[2 * i]     = 0.5 * ( 1.0 - sin (2 * PI / (2 * 4096) * i));
 ///     table[2 * i + 1] = 0.5 * (-1.0 * cos (2 * PI / (2 * 4096) * i));
@@ -4149,6 +4176,7 @@ pub const REAL_COEF_A_U16: [u16; 8192] = [
     0x4000, 0x3fc1, 0x4000, 0x3fce, 0x4000, 0x3fda, 0x4000, 0x3fe7, 0x4000, 0x3ff3, 0x4000,
 ];
 
+/// Precomputed real coefficients for 4096-point FFT, in Q15 format.
 /// for i in 0..4096:
 ///     table[2*i]     = 0.5 * (1.0 + sin(2 * PI / (2 * 4096) * i))
 ///     table[2*i + 1] = 0.5 * cos(2 * PI / (2 * 4096) * i)
@@ -4838,6 +4866,7 @@ pub const REAL_COEF_B_U16: [u16; 8192] = [
     0xc000, 0x4019, 0xc000, 0x400d, 0xc000,
 ];
 
+/// Precomputed real coefficients for 4096-point FFT, in Q15 format.
 /// for i in 0..4096:
 ///     table[2 * i]     = 0.5 * ( 1.0 - sin (2 * PI / (2 * 4096) * i));
 ///     table[2 * i + 1] = 0.5 * (-1.0 * cos (2 * PI / (2 * 4096) * i));
@@ -5860,6 +5889,7 @@ pub const REAL_COEF_A_U32: [u32; 8192] = [
     0x3ffffb11, 0x3ff36f02, 0x3ffffec4,
 ];
 
+/// Precomputed real coefficients for 4096-point FFT, in Q15 format.
 /// for i in 0..4096:
 ///     table[2*i]     = 0.5 * (1.0 + sin(2 * PI / (2 * 4096) * i))
 ///     table[2*i + 1] = 0.5 * cos(2 * PI / (2 * 4096) * i)
