@@ -68,6 +68,7 @@ impl MfccI16 {
             core::slice::from_raw_parts(self.filter.as_ptr() as *const i16, self.filter.len())
         };
 
+        // q15
         let (max_abs, _) = absmax_i16(input, self.n_fft);
 
         if max_abs != 0 && max_abs != i16::MAX {
