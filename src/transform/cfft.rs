@@ -48,7 +48,7 @@ fn upshift_quads_i32(data: &mut [i32]) {
     }
 }
 
-///                  Input and Output formats for CFFT Q15
+/// Input and Output formats for CFFT Q15
 /// | CFFT Size  | Input Format  | Output Format  | Number of bits to upscale |
 /// | ---------: | ------------: | -------------: | ------------------------: |
 /// | 16         | 1.15          | 5.11           | 4                         |
@@ -56,7 +56,7 @@ fn upshift_quads_i32(data: &mut [i32]) {
 /// | 256        | 1.15          | 9.7            | 8                         |
 /// | 1024       | 1.15          | 11.5           | 10                        |
 ///
-///                  Input and Output formats for CIFFT Q15
+/// Input and Output formats for CIFFT Q15
 /// | CIFFT Size  | Input Format  | Output Format  | Number of bits to upscale |
 /// | ----------: | ------------: | -------------: | ------------------------: |
 /// | 16          | 1.15          | 5.11           | 0                         |
@@ -217,7 +217,7 @@ impl CfftI16 {
     }
 }
 
-///                  Input and Output formats for CFFT Q31
+/// Input and Output formats for CFFT Q31
 /// | CFFT Size  | Input Format  | Output Format  | Number of bits to upscale |
 /// | ---------: | ------------: | -------------: | ------------------------: |
 /// | 16         | 1.31          | 5.27           | 4                         |
@@ -225,7 +225,7 @@ impl CfftI16 {
 /// | 256        | 1.31          | 9.23           | 8                         |
 /// | 1024       | 1.31          | 11.21          | 10                        |
 ///
-///                  Input and Output formats for CIFFT Q31
+/// Input and Output formats for CIFFT Q31
 /// | CIFFT Size  | Input Format  | Output Format  | Number of bits to upscale |
 /// | ----------: | ------------: | -------------: | ------------------------: |
 /// | 16          | 1.31          | 5.27           | 0                         |

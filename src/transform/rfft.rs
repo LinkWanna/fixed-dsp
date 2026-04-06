@@ -11,7 +11,7 @@ fn i32_mul(a: i32, b: i32) -> i32 {
 
 /// Real-valued Fast Fourier Transform (RFFT) and its inverse (RIFFT) implementations for 16-bit fixed-point data.
 ///
-///                   Input and Output formats for RFFT Q15
+/// Input and Output formats for RFFT Q15
 /// | RFFT Size  | Input Format  | Output Format  | Number of bits to upscale |
 /// | ---------: | ------------: | -------------: | ------------------------: |
 /// | 32         | 1.15          | 6.10           | 5                         |
@@ -24,7 +24,7 @@ fn i32_mul(a: i32, b: i32) -> i32 {
 /// | 4096       | 1.15          | 13.3           | 12                        |
 /// | 8192       | 1.15          | 14.2           | 13                        |
 ///
-///                   Input and Output formats for RIFFT Q15
+/// Input and Output formats for RIFFT Q15
 /// | RFFT Size  | Input Format  | Output Format  | Number of bits to upscale |
 /// | ---------: | ------------: | -------------: | ------------------------: |
 /// | 32         | 1.15          | 6.10           | 0                         |
@@ -181,7 +181,7 @@ impl RfftI16 {
 
 /// Real-valued Fast Fourier Transform (RFFT) and its inverse (RIFFT) implementations for 32-bit fixed-point data.
 
-///                   Input and Output formats for RFFT Q31
+/// Input and Output formats for RFFT Q31
 /// | RFFT Size  | Input Format  | Output Format  | Number of bits to upscale |
 /// | ---------: | ------------: | -------------: | ------------------------: |
 /// | 32         | 1.31          | 6.26           | 5                         |
@@ -194,7 +194,7 @@ impl RfftI16 {
 /// | 4096       | 1.31          | 13.19          | 12                        |
 /// | 8192       | 1.31          | 14.18          | 13                        |
 ///
-///                   Input and Output formats for RIFFT Q31
+/// Input and Output formats for RIFFT Q31
 /// | RIFFT Size  | Input Format  | Output Format  | Number of bits to upscale |
 /// | ----------: | ------------: | -------------: | ------------------------: |
 /// | 32          | 1.31          | 6.26           | 0                         |
