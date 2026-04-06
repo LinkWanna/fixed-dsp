@@ -1,8 +1,9 @@
-#[inline]
-fn sat_i16(v: i32) -> i16 {
-    v.clamp(i16::MIN as i32, i16::MAX as i32) as i16
-}
+use crate::sat_i16;
 
+// #[inline]
+// fn i32_mul(a: i32, b: i32) -> i32 {
+//     (((a as i64 * b as i64) + 0x8000_0000) >> 32) as i32
+// }
 #[inline]
 fn i32_mul(a: i32, b: i32) -> i32 {
     ((a as i64 * b as i64) >> 32) as i32

@@ -1,12 +1,4 @@
-#[inline]
-fn sat_i16(x: i32) -> i16 {
-    x.clamp(i16::MIN as i32, i16::MAX as i32) as i16
-}
-
-#[inline]
-fn sat_i32(x: i64) -> i32 {
-    x.clamp(i32::MIN as i64, i32::MAX as i64) as i32
-}
+use crate::{sat_i16, sat_i32};
 
 /// In-place Q15 scale, matching CMSIS `arm_scale_q15` scalar behavior.
 pub fn scale_i16(data: &mut [i16], scale: i16, shift: i8) {

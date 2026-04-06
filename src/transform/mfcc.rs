@@ -5,16 +5,7 @@ use crate::complex::cmplx_mag_i16;
 use crate::matrix::{Matrix, mat_vec_mul_i16};
 use crate::statistics::absmax_i16;
 use crate::transform::RfftI16;
-
-#[inline]
-fn sat_i16(x: i32) -> i16 {
-    x.clamp(i16::MIN as i32, i16::MAX as i32) as i16
-}
-
-#[inline]
-fn sat_i32(x: i64) -> i32 {
-    x.clamp(i32::MIN as i64, i32::MAX as i64) as i32
-}
+use crate::{sat_i16, sat_i32};
 
 #[inline]
 fn mul_q15(a: i16, b: i16) -> i16 {

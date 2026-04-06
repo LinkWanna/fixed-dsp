@@ -1,11 +1,10 @@
-import numpy as np
 import scipy.signal.windows as sw
 
 from script.mfcc import dct, mel_filter, render_mfcc_template
 
 
 def main():
-    # Mel滤波器组
+    # Mel Filterbank
     filt_len, filt_pos, total_len, packed_filters, filters = mel_filter(
         sample_rate=16000,
         n_fft=256,
@@ -15,10 +14,10 @@ def main():
         htk=True,
     )
 
-    # 离散余弦变换矩阵
+    # DCT Matrix
     dct_matrix = dct(13, 20)
 
-    # 窗函数
+    # Window Function
     window = sw.hamming(256, sym=False)
 
     rust_code = render_mfcc_template(
